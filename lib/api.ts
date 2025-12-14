@@ -36,12 +36,14 @@ api.interceptors.request.use((config) => {
 
 export interface Account {
   _id: string;
+  accountID: string;
   name: string;
   email: string;
   balance: number;
   status: string;
   createdAt: string;
   accountHolderNumber?: string;
+  verified?: boolean;
 }
 
 export interface Project {
@@ -77,11 +79,11 @@ export interface OTPRecord {
 
 // Auth API
 export const authApi = {
-  register: (data: { name: string; accountHolderNumber: string; email: string; password: string }) =>
-    api.post('/api/account/register', data),
+  register: (data: { name: string; accountHolderNumber?: string; email: string; password: string }) =>
+    api.post<{ payload: Account; token: string }>('/api/account/register', data),
   
   login: (data: { email: string; password: string }) =>
-    api.post('/api/account/login', data),
+    api.post<{ payload: Account; token: string }>('/api/account/login', data),
   
   getProfile: () =>
     api.get<{ payload: Account }>('/api/account/profile'),

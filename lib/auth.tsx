@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const token = localStorage.getItem('token');
       if (token) {
         const { data } = await authApi.getProfile();
-        setUser(data.account);
+        setUser(data.payload);
       }
     } catch (error) {
       localStorage.removeItem('token');
@@ -41,14 +41,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const { data } = await authApi.login({ email, password });
     localStorage.setItem('token', data.token);
-    setUser(data.account);
+    setUser(data.payload);
     router.push('/dashboard');
   };
 
   const register = async (name: string, email: string, password: string) => {
     const { data } = await authApi.register({ name, email, password });
     localStorage.setItem('token', data.token);
-    setUser(data.account);
+    setUser(data.payload);
     router.push('/dashboard');
   };
 
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = async () => {
     try {
       const { data } = await authApi.getProfile();
-      setUser(data.account);
+      setUser(data.payload);
     } catch (error) {
       console.error('Failed to refresh user:', error);
     }
