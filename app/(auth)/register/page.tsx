@@ -7,8 +7,8 @@ import { authApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FiShield, FiAlertCircle } from 'react-icons/fi';
+import { Boxes } from '@/components/ui/background-boxes';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -82,20 +82,111 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-3">
-          <div className="flex items-center justify-center mb-2">
-            <div className="w-14 h-14 rounded-xl bg-zinc-900 flex items-center justify-center">
+    <div className="min-h-screen flex bg-white">
+      {/* Left Side - Info Panel */}
+      <div className="hidden lg:flex lg:w-1/2 bg-zinc-950 relative overflow-hidden">
+        {/* Background Boxes */}
+        <div className="absolute inset-0 z-0">
+          <Boxes />
+        </div>
+        
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 z-[1] bg-zinc-950/80 pointer-events-none" />
+        
+        {/* Content Container */}
+        <div className="relative z-10 flex flex-col items-center justify-center flex-1 p-12 pointer-events-auto">
+          {/* Logo - Top Left */}
+          <div className="absolute top-12 left-12 flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center">
               <FiShield className="text-white text-2xl" />
             </div>
+            <div>
+              <div className="text-2xl font-bold text-white">GateKeeperPro</div>
+              <div className="text-sm text-zinc-400">OTP Verification Platform</div>
+            </div>
           </div>
-          <CardTitle className="text-center text-2xl">Create an account</CardTitle>
-          <CardDescription className="text-center">
-            Get started with GateKeeperPro today
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+
+          {/* Main Content - Centered */}
+          <div className="max-w-lg space-y-8">
+            <div className="text-center">
+              <h1 className="text-5xl font-bold text-white mb-6 leading-tight">
+                Start Building with
+                <br />
+                <span className="text-blue-500">100 Free Credits</span>
+              </h1>
+              <p className="text-xl text-zinc-300">
+                Join thousands of developers using GateKeeperPro for secure OTP verification.
+              </p>
+            </div>
+
+            <div className="space-y-6 mt-12">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-1">No Credit Card Required</h3>
+                  <p className="text-zinc-400">Get started immediately with your free credits</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-1">Quick Integration</h3>
+                  <p className="text-zinc-400">Live in minutes with our simple API or hosted checkout</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-1">Pay As You Grow</h3>
+                  <p className="text-zinc-400">Flexible pricing that scales with your usage</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer - Bottom Left */}
+          <div className="absolute bottom-12 left-12 text-zinc-500 text-sm">
+            © 2025 GateKeeperPro. All rights reserved.
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side - Register Form */}
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-md">
+          <div className="mb-8 lg:hidden">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-xl bg-zinc-900 flex items-center justify-center">
+                <FiShield className="text-white text-2xl" />
+              </div>
+              <div>
+                <div className="text-xl font-bold">GateKeeperPro</div>
+                <div className="text-xs text-zinc-500">Developer Portal</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-zinc-900 mb-2">Create an account</h2>
+            <p className="text-zinc-600">
+              Get started with GateKeeperPro today
+            </p>
+          </div>
+
           <div className="space-y-4">
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-red-800">
@@ -117,7 +208,7 @@ export default function RegisterPage() {
               <Input
                 id="name"
                 type="text"
-                placeholder="Global Icons"
+                placeholder="MTN Ghana"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -188,13 +279,13 @@ export default function RegisterPage() {
 
             <div className="text-center text-sm text-zinc-600">
               Already have an account?{' '}
-              <Link href="/login" className="text-zinc-900 font-medium hover:underline">
+              <Link href="/login" className="text-blue-600 font-medium hover:underline">
                 Sign in
               </Link>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
