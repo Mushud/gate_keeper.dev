@@ -1,16 +1,17 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AuthProvider, useAuth } from '@/lib/auth';
-import { FiShield, FiHome, FiFolder, FiShoppingCart, FiBarChart2, FiFileText, FiCreditCard, FiSettings, FiLogOut, FiBook } from 'react-icons/fi';
+import { FiShield, FiHome, FiFolder, FiShoppingCart, FiBarChart2, FiFileText, FiCreditCard, FiSettings, FiLogOut, FiBook, FiMenu, FiX } from 'react-icons/fi';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     console.log('Dashboard layout - loading:', loading, 'user:', user ? 'exists' : 'null');
@@ -50,10 +51,44 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex">
+      {/* Mobile Menu Button */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-zinc-200 p-4">
+        <div className="flex items-center justify-between">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center">
+              <FiShield className="text-white text-sm" />
+            </div>
+            <div className="font-bold">GateKeeperPro</div>
+          </Link>
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 rounded-lg hover:bg-zinc-100 transition-colors"
+          >
+            {sidebarOpen ? <FiX className="text-2xl" /> : <FiMenu className="text-2xl" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Overlay for mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-zinc-200 flex flex-col h-screen sticky top-0">
-        {/* Logo */}
-        <div className="p-6 border-b border-zinc-200">
+      <aside
+        className={`
+          fixed lg:sticky top-0 left-0 h-screen
+          w-64 bg-white border-r border-zinc-200 flex flex-col
+          z-50 lg:z-auto
+          transition-transform duration-300 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}
+      >
+        {/* Logo - Desktop Only */}
+        <div className="hidden lg:block p-6 border-b border-zinc-200">
           <Link href="/dashboard" className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-zinc-900 flex items-center justify-center">
               <FiShield className="text-white text-lg" />
@@ -65,14 +100,18 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           </Link>
         </div>
 
+        {/* Mobile Top Spacing */}
+        <div className="lg:hidden h-20" />
+
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.name}
                 href={item.href}
+                onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                   isActive
                     ? 'bg-zinc-100 text-zinc-900'
@@ -98,7 +137,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <button
-            onClick={logout}
+            onClick={() => {
+              logout();
+              setSidebarOpen(false);
+            }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
           >
             <FiLogOut className="text-lg" />
@@ -108,8 +150,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto">
-        {children}
+      <main className="flex-1 overflow-y-auto pt-20 lg:pt-0">
+        <div className="p-4 lg:p-0">
+          {children}
+        </div>
       </main>
     </div>
   );

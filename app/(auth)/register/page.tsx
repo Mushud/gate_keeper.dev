@@ -210,7 +210,7 @@ export default function RegisterPage() {
               <Input
                 id="accountHolderNumber"
                 type="tel"
-                placeholder="+1234567890"
+                placeholder="0540000003"
                 value={accountHolderNumber}
                 onChange={(e) => setAccountHolderNumber(e.target.value)}
                 onKeyDown={handleKeyDown}
