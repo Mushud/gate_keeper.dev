@@ -41,6 +41,7 @@ export interface Account {
   balance: number;
   status: string;
   createdAt: string;
+  accountHolderNumber?: string;
 }
 
 export interface Project {
