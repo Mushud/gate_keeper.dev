@@ -15,24 +15,27 @@ api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('API Request:', config.method?.toUpperCase(), config.url, 'with token');
+    } else {
+      console.log('API Request:', config.method?.toUpperCase(), config.url, 'without token');
     }
   }
   return config;
 });
 
 // Response interceptor for error handling
-// api.interceptors.response.use(
-//   (response) => response,
-//   (error) => {
-//     if (error.response?.status === 401) {
-//       if (typeof window !== 'undefined') {
-//         localStorage.removeItem('token');
-//         window.location.href = '/login';
-//       }
-//     }
-//     return Promise.reject(error);
-//   }
-// );
+api.interceptors.response.use(
+  (response) => {
+    console.log('API Response:', response.config.method?.toUpperCase(), response.config.url, response.status);
+    return response;
+  },
+  (error) => {
+    console.error('API Error:', error.config?.method?.toUpperCase(), error.config?.url, error.response?.status, error.response?.data);
+    // Don't auto-redirect on 401 - let individual components handle auth failures
+    // This prevents redirect loops when checkAuth fails
+    return Promise.reject(error);
+  }
+);
 
 export interface Account {
   _id: string;

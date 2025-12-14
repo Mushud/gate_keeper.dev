@@ -13,8 +13,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
+    console.log('Dashboard layout - loading:', loading, 'user:', user ? 'exists' : 'null');
     if (!loading && !user) {
-      router.push('/login');
+      console.log('No user found, redirecting to login');
+      // Small delay to ensure auth check has completed
+      const timer = setTimeout(() => {
+        router.push('/login');
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [user, loading, router]);
 

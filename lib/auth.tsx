@@ -28,28 +28,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const token = localStorage.getItem('token');
       if (token) {
+        console.log('Checking auth with token:', token.substring(0, 20) + '...');
         const { data } = await authApi.getProfile();
+        console.log('Auth check successful, user:', data.payload);
         setUser(data.payload);
+      } else {
+        console.log('No token found in localStorage');
       }
     } catch (error) {
+      console.error('Auth check failed:', error);
       localStorage.removeItem('token');
+      setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
   const login = async (email: string, password: string) => {
-    const { data } = await authApi.login({ email, password });
-    localStorage.setItem('token', data.token);
-    setUser(data.payload);
-    router.push('/dashboard');
+    try {
+      const { data } = await authApi.login({ email, password });
+      console.log('Login successful, token:', data.token.substring(0, 20) + '...');
+      console.log('User data:', data.payload);
+      localStorage.setItem('token', data.token);
+      setUser(data.payload);
+      setLoading(false);
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
   };
 
   const register = async (name: string, email: string, password: string) => {
-    const { data } = await authApi.register({ name, email, password });
-    localStorage.setItem('token', data.token);
-    setUser(data.payload);
-    router.push('/dashboard');
+    try {
+      const { data } = await authApi.register({ name, email, password });
+      console.log('Registration successful, token:', data.token.substring(0, 20) + '...');
+      localStorage.setItem('token', data.token);
+      setUser(data.payload);
+      setLoading(false);
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Registration failed:', error);
+      throw error;
+    }
   };
 
   const logout = () => {
