@@ -19,7 +19,6 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [response, setResponse] = useState<any>(null);
 
   useEffect(() => {
     console.log('RegisterPage mounted');
@@ -47,7 +46,6 @@ export default function RegisterPage() {
 
   const handleRegister = async () => {
     setError('');
-    setResponse(null);
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
@@ -64,7 +62,6 @@ export default function RegisterPage() {
     try {
       const result = await authApi.register({ name, accountHolderNumber, email, password });
       console.log('Registration response:', result.data);
-      setResponse(result.data);
       
       // Store token and redirect
       if (result.data?.token) {
@@ -76,7 +73,6 @@ export default function RegisterPage() {
     } catch (err: any) {
       console.error('Registration error:', err);
       setError(err.response?.data?.error || 'Registration failed. Please try again.');
-      setResponse(err.response?.data || { error: err.message });
       setLoading(false);
     }
   };
@@ -192,14 +188,6 @@ export default function RegisterPage() {
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-red-800">
                 <FiAlertCircle />
                 <p className="text-sm">{error}</p>
-              </div>
-            )}
-
-            {response && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-xs font-mono text-blue-900 whitespace-pre-wrap">
-                  {JSON.stringify(response, null, 2)}
-                </p>
               </div>
             )}
 
