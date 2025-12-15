@@ -89,63 +89,43 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col items-center justify-center flex-1 p-12 pointer-events-auto">
           {/* Logo - Top Left */}
           <div className="absolute top-12 left-12 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center">
-              <FiShield className="text-white text-2xl" />
+            <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center">
+              <FiShield className="text-zinc-900 text-2xl" />
             </div>
             <div>
               <div className="text-2xl font-bold text-white">GateKeeperPro</div>
-              <div className="text-sm text-zinc-400">OTP Verification Platform</div>
             </div>
           </div>
 
           {/* Main Content - Centered */}
-          <div className="max-w-lg space-y-8">
+          <div className="max-w-lg space-y-12">
             <div className="text-center">
-              <h1 className="text-5xl font-bold text-white mb-6 leading-tight">
+              <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
                 Secure OTP Verification
-                <br />
-                <span className="text-blue-500">Made Simple</span>
               </h1>
-              <p className="text-xl text-zinc-300">
-                Powerful authentication with hosted checkout pages and direct API integration.
+              <p className="text-lg text-zinc-300">
+                Enterprise-grade authentication platform trusted by leading organizations.
               </p>
             </div>
 
-            <div className="space-y-6 mt-12">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-1">Hosted Checkout</h3>
-                  <p className="text-zinc-400">Pre-built verification pages that work out of the box</p>
-                </div>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-white flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <p className="text-zinc-300">Hosted verification pages</p>
               </div>
-
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-1">Direct API</h3>
-                  <p className="text-zinc-400">Full control with our RESTful API integration</p>
-                </div>
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-white flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <p className="text-zinc-300">RESTful API integration</p>
               </div>
-
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-1">100 Free Credits</h3>
-                  <p className="text-zinc-400">Start building immediately with free credits on signup</p>
-                </div>
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-white flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <p className="text-zinc-300">100 free credits included</p>
               </div>
             </div>
           </div>
@@ -201,7 +181,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="james.klottey@gmail.om"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -227,7 +207,7 @@ export default function LoginPage() {
             <Button
               type="button"
               onClick={handleLogin}
-              className="w-full"
+              className="w-full h-11 bg-zinc-900 hover:bg-black text-white font-medium transition-colors"
               disabled={loading}
             >
               {loading ? "Signing in..." : "Sign in"}
@@ -237,7 +217,7 @@ export default function LoginPage() {
               Don't have an account?{" "}
               <Link
                 href="/register"
-                className="text-blue-600 font-medium hover:underline"
+                className="text-zinc-900 font-medium hover:underline"
               >
                 Sign up
               </Link>

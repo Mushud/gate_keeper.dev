@@ -93,63 +93,43 @@ export default function RegisterPage() {
         <div className="relative z-10 flex flex-col items-center justify-center flex-1 p-12 pointer-events-auto">
           {/* Logo - Top Left */}
           <div className="absolute top-12 left-12 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center">
-              <FiShield className="text-white text-2xl" />
+            <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center">
+              <FiShield className="text-zinc-900 text-2xl" />
             </div>
             <div>
               <div className="text-2xl font-bold text-white">GateKeeperPro</div>
-              <div className="text-sm text-zinc-400">OTP Verification Platform</div>
             </div>
           </div>
 
           {/* Main Content - Centered */}
-          <div className="max-w-lg space-y-8">
+          <div className="max-w-lg space-y-12">
             <div className="text-center">
-              <h1 className="text-5xl font-bold text-white mb-6 leading-tight">
-                Start Building with
-                <br />
-                <span className="text-blue-500">100 Free Credits</span>
+              <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
+                Secure OTP Verification
               </h1>
-              <p className="text-xl text-zinc-300">
-                Join thousands of developers using GateKeeperPro for secure OTP verification.
+              <p className="text-lg text-zinc-300">
+                Enterprise-grade authentication platform trusted by leading organizations.
               </p>
             </div>
 
-            <div className="space-y-6 mt-12">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-1">No Credit Card Required</h3>
-                  <p className="text-zinc-400">Get started immediately with your free credits</p>
-                </div>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-white flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <p className="text-zinc-300">100 free credits included</p>
               </div>
-
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-1">Quick Integration</h3>
-                  <p className="text-zinc-400">Live in minutes with our simple API or hosted checkout</p>
-                </div>
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-white flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <p className="text-zinc-300">Simple API integration</p>
               </div>
-
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-1">Pay As You Grow</h3>
-                  <p className="text-zinc-400">Flexible pricing that scales with your usage</p>
-                </div>
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-white flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <p className="text-zinc-300">Global SMS network</p>
               </div>
             </div>
           </div>
@@ -196,7 +176,7 @@ export default function RegisterPage() {
               <Input
                 id="name"
                 type="text"
-                placeholder="MTN Ghana"
+                placeholder="Enter your name or company name here..."
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -210,7 +190,7 @@ export default function RegisterPage() {
               <Input
                 id="accountHolderNumber"
                 type="tel"
-                placeholder="0540000003"
+                placeholder="Enter your phone number here..."
                 value={accountHolderNumber}
                 onChange={(e) => setAccountHolderNumber(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -224,7 +204,7 @@ export default function RegisterPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="john.doe@example.com"
+                placeholder="Enter your email here..."
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -238,7 +218,7 @@ export default function RegisterPage() {
               <Input
                 id="password"
                 type="password"
-                placeholder="SecurePassword123!"
+                placeholder="Enter your password here..."
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -252,7 +232,7 @@ export default function RegisterPage() {
               <Input
                 id="confirmPassword"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Re-enter your password here..."
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -261,13 +241,13 @@ export default function RegisterPage() {
               />
             </div>
 
-            <Button type="button" onClick={handleRegister} className="w-full" disabled={loading}>
+            <Button type="button" onClick={handleRegister} className="w-full h-11 bg-zinc-900 hover:bg-black text-white font-medium transition-colors" disabled={loading}>
               {loading ? 'Creating account...' : 'Create account'}
             </Button>
 
             <div className="text-center text-sm text-zinc-600">
               Already have an account?{' '}
-              <Link href="/login" className="text-blue-600 font-medium hover:underline">
+              <Link href="/login" className="text-zinc-900 font-medium hover:underline">
                 Sign in
               </Link>
             </div>
