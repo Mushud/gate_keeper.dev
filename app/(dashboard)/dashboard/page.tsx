@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth';
 import api from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FiDollarSign, FiSend, FiCheckCircle, FiTrendingUp, FiMail, FiPhone, FiAlertCircle, FiArrowRight, FiRefreshCw } from 'react-icons/fi';
+import { FiDollarSign, FiSend, FiCheckCircle, FiTrendingUp, FiMail, FiPhone, FiAlertCircle, FiArrowRight, FiRefreshCw, FiShield, FiXCircle } from 'react-icons/fi';
 
 interface Analytics {
   totalOTPs: number;
@@ -16,6 +16,13 @@ interface Analytics {
   todayOTPs: number;
   todayVerified: number;
   recentRecords: any[];
+  kyc?: {
+    total: number;
+    successCount: number;
+    notFoundCount: number;
+    failedCount: number;
+    totalCreditsUsed: number;
+  };
 }
 
 export default function DashboardPage() {
@@ -44,6 +51,13 @@ export default function DashboardPage() {
         todayOTPs: data.statistics?.today?.total || 0,
         todayVerified: data.statistics?.today?.verified || 0,
         recentRecords: data.recentRecords || [],
+        kyc: data.kyc ? {
+          total: data.kyc.total || 0,
+          successCount: data.kyc.successCount || 0,
+          notFoundCount: data.kyc.notFoundCount || 0,
+          failedCount: data.kyc.failedCount || 0,
+          totalCreditsUsed: data.kyc.totalCreditsUsed || 0,
+        } : undefined,
       };
       
       setAnalytics(transformedData);
@@ -230,6 +244,98 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      {/* KYC Verification Analytics */}
+      {analytics?.kyc && analytics.kyc.total > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-zinc-900 mb-4 flex items-center gap-2">
+            <FiShield className="text-blue-600" />
+            KYC Phone Verifications
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <FiShield className="text-blue-600" />
+                  Total Verifications
+                </CardTitle>
+                <CardDescription>All KYC requests</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-blue-600">
+                  {(analytics.kyc.total || 0).toLocaleString()}
+                </div>
+                <p className="text-sm text-zinc-600 mt-2">
+                  {analytics.kyc.totalCreditsUsed || 0} credits used
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <FiCheckCircle className="text-green-600" />
+                  Successful
+                </CardTitle>
+                <CardDescription>Name found</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-green-600">
+                  {(analytics.kyc.successCount || 0).toLocaleString()}
+                </div>
+                <p className="text-sm text-zinc-600 mt-2">
+                  {analytics.kyc.total > 0 
+                    ? `${Math.round(((analytics.kyc.successCount || 0) / analytics.kyc.total) * 100)}% success rate`
+                    : '0% success rate'
+                  }
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <FiAlertCircle className="text-yellow-600" />
+                  Not Found
+                </CardTitle>
+                <CardDescription>Name not registered</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-yellow-600">
+                  {(analytics.kyc.notFoundCount || 0).toLocaleString()}
+                </div>
+                <p className="text-sm text-zinc-600 mt-2">
+                  {analytics.kyc.total > 0 
+                    ? `${Math.round(((analytics.kyc.notFoundCount || 0) / analytics.kyc.total) * 100)}% of total`
+                    : '0% of total'
+                  }
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <FiXCircle className="text-red-600" />
+                  Failed
+                </CardTitle>
+                <CardDescription>Verification errors</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-red-600">
+                  {(analytics.kyc.failedCount || 0).toLocaleString()}
+                </div>
+                <p className="text-sm text-zinc-600 mt-2">
+                  {analytics.kyc.total > 0 
+                    ? `${Math.round(((analytics.kyc.failedCount || 0) / analytics.kyc.total) * 100)}% error rate`
+                    : '0% error rate'
+                  }
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activity */}
         <Card>
@@ -307,6 +413,20 @@ export default function DashboardPage() {
               </div>
             </a>
             <a
+              href="/kyc"
+              className="block p-4 rounded-lg border border-zinc-200 hover:border-zinc-900 hover:bg-zinc-50 transition-colors group"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium">KYC Verification</div>
+                  <div className="text-sm text-zinc-500 mt-1">
+                    Verify phone numbers
+                  </div>
+                </div>
+                <FiArrowRight className="text-zinc-400 group-hover:text-zinc-900 transition-colors" />
+              </div>
+            </a>
+            <a
               href="/checkout"
               className="block p-4 rounded-lg border border-zinc-200 hover:border-zinc-900 hover:bg-zinc-50 transition-colors group"
             >
@@ -315,20 +435,6 @@ export default function DashboardPage() {
                   <div className="font-medium">Generate Checkout</div>
                   <div className="text-sm text-zinc-500 mt-1">
                     Create a checkout session
-                  </div>
-                </div>
-                <FiArrowRight className="text-zinc-400 group-hover:text-zinc-900 transition-colors" />
-              </div>
-            </a>
-            <a
-              href="/analytics"
-              className="block p-4 rounded-lg border border-zinc-200 hover:border-zinc-900 hover:bg-zinc-50 transition-colors group"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">View Analytics</div>
-                  <div className="text-sm text-zinc-500 mt-1">
-                    Check detailed statistics
                   </div>
                 </div>
                 <FiArrowRight className="text-zinc-400 group-hover:text-zinc-900 transition-colors" />

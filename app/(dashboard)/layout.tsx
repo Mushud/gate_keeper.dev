@@ -40,6 +40,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: FiHome },
     { name: 'Projects', href: '/projects', icon: FiFolder },
+    { name: 'KYC Verification', href: '/kyc', icon: FiShield },
     { name: 'Checkout', href: '/checkout', icon: FiShoppingCart },
     // { name: 'Analytics', href: '/analytics', icon: FiBarChart2 },
     { name: 'Logs', href: '/logs', icon: FiFileText },

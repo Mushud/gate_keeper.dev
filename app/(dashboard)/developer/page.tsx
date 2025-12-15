@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FiCode, FiCopy, FiBook, FiLock, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import { FiCode, FiCopy, FiBook, FiLock, FiCheckCircle, FiAlertCircle, FiShield } from 'react-icons/fi';
 
 export default function DeveloperDocsPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -384,6 +384,133 @@ if (data.verified) {
         </CardContent>
       </Card>
 
+      {/* KYC Phone Verification */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FiShield className="w-5 h-5" />
+            KYC Phone Verification
+          </CardTitle>
+          <CardDescription>
+            Verify phone numbers and resolve registered names
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <h3 className="text-sm font-semibold mb-3">Verify Phone Number</h3>
+            <p className="text-sm text-zinc-600 mb-3">
+              Verify a Ghanaian phone number and get the registered name. Costs 1 credit per verification.
+            </p>
+            <CodeBlock
+              id="kyc-verify"
+              language="bash"
+              code={`curl -X POST https://api.gatekeeperpro.live/api/kyc/verify-phone \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: YOUR_API_KEY" \\
+  -d '{
+    "phoneNumber": "0551234567"
+  }'`}
+            />
+            <div className="mt-3 p-3 bg-zinc-50 rounded-lg">
+              <p className="text-xs font-semibold text-zinc-700 mb-2">Response:</p>
+              <pre className="text-xs text-zinc-600 overflow-x-auto">
+{`{
+  "success": true,
+  "data": {
+    "phoneNumber": "+233551234567",
+    "name": "John Doe",
+    "status": "success",
+    "verificationId": "65abc...",
+    "timestamp": "2025-12-15T10:30:00Z"
+  }
+}`}
+              </pre>
+            </div>
+          </div>
+
+          <div className="border-t pt-6">
+            <h3 className="text-sm font-semibold mb-3">Get Verification History</h3>
+            <p className="text-sm text-zinc-600 mb-3">
+              Retrieve your verification history with pagination support.
+            </p>
+            <CodeBlock
+              id="kyc-history"
+              language="bash"
+              code={`curl -X GET "https://api.gatekeeperpro.live/api/kyc/history?limit=50&page=1" \\
+  -H "X-API-Key: YOUR_API_KEY"`}
+            />
+            <div className="mt-3 p-3 bg-zinc-50 rounded-lg">
+              <p className="text-xs font-semibold text-zinc-700 mb-2">Response:</p>
+              <pre className="text-xs text-zinc-600 overflow-x-auto">
+{`{
+  "success": true,
+  "data": {
+    "verifications": [
+      {
+        "_id": "65abc...",
+        "phoneNumber": "+233551234567",
+        "resolvedName": "John Doe",
+        "status": "success",
+        "creditDeducted": 1,
+        "createdAt": "2025-12-15T10:30:00Z"
+      }
+    ],
+    "pagination": {
+      "total": 150,
+      "page": 1,
+      "limit": 50,
+      "totalPages": 3
+    }
+  }
+}`}
+              </pre>
+            </div>
+          </div>
+
+          <div className="border-t pt-6">
+            <h3 className="text-sm font-semibold mb-3">Phone Number Format</h3>
+            <div className="space-y-2 text-sm">
+              <p className="text-zinc-600">Supports both formats:</p>
+              <ul className="list-disc list-inside space-y-1 text-zinc-600 ml-2">
+                <li><code className="bg-zinc-100 px-1 py-0.5 rounded">0551234567</code> - Local format</li>
+                <li><code className="bg-zinc-100 px-1 py-0.5 rounded">+233551234567</code> - International format</li>
+              </ul>
+              <p className="text-zinc-600 mt-3">
+                Validation: Must be a valid Ghanaian mobile number (MTN, Vodafone, AirtelTigo)
+              </p>
+            </div>
+          </div>
+
+          <div className="border-t pt-6">
+            <h3 className="text-sm font-semibold mb-3">Status Codes</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-start gap-2">
+                <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">success</span>
+                <span className="text-zinc-600">Name found and returned</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">not_found</span>
+                <span className="text-zinc-600">Number is valid but name not registered</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">failed</span>
+                <span className="text-zinc-600">Verification failed due to an error</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-900 flex items-center gap-2">
+              <FiAlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>
+                <strong>Note:</strong> Each verification deducts 1 credit regardless of whether a name is found or not.
+                Make sure you have sufficient balance before making requests.
+              </span>
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Error Codes */}
       <Card className="mb-6">
         <CardHeader>
@@ -412,8 +539,8 @@ if (data.verified) {
                 </tr>
                 <tr>
                   <td className="py-2 px-3 font-mono">400</td>
-                  <td className="py-2 px-3">Invalid OTP Code</td>
-                  <td className="py-2 px-3">User entered wrong code</td>
+                  <td className="py-2 px-3">Invalid OTP Code / Phone Format</td>
+                  <td className="py-2 px-3">Check input format and validation</td>
                 </tr>
                 <tr>
                   <td className="py-2 px-3 font-mono">404</td>

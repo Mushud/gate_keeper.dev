@@ -4,6 +4,10 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
+  // Optimize package imports for better performance
+  experimental: {
+    optimizePackageImports: ['framer-motion', 'react-icons'],
+  },
 }
 
 module.exports = nextConfig
