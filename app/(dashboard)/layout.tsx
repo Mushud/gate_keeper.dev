@@ -56,9 +56,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-zinc-200 p-4">
         <div className="flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center">
-              <FiShield className="text-white text-sm" />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="GateKeeperPro" 
+              className="w-8 h-8 object-contain"
+            />
             <div className="font-bold">GateKeeperPro</div>
           </Link>
           <button
@@ -91,9 +93,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         {/* Logo - Desktop Only */}
         <div className="hidden lg:block p-6 border-b border-zinc-200">
           <Link href="/dashboard" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-zinc-900 flex items-center justify-center">
-              <FiShield className="text-white text-lg" />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="GateKeeperPro" 
+              className="w-10 h-10 object-contain"
+            />
             <div>
               <div className="font-bold text-lg">GateKeeperPro</div>
               <div className="text-xs text-zinc-500">Developer Portal</div>

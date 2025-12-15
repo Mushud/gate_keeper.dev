@@ -12,6 +12,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "GateKeeperPro - Developer Portal",
   description: "Manage your OTP projects and API integrations",
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({
