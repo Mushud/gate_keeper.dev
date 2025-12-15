@@ -72,12 +72,14 @@ export default function ProjectsPage() {
       setFormData({ name: '', senderID: '' });
       fetchProjects();
       
-      setTimeout(() => {
-        setSuccess('');
-        if (!newApiKey) {
+      // Don't clear the modal or success message - let user copy the API key
+      // Clear success message after 3 seconds only if no API key shown
+      if (!response.data.apiKey) {
+        setTimeout(() => {
+          setSuccess('');
           setShowCreateModal(false);
-        }
-      }, 2000);
+        }, 3000);
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to create project');
     } finally {
