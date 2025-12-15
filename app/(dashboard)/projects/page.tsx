@@ -259,6 +259,7 @@ export default function ProjectsPage() {
                     <Input
                       id="senderID"
                       placeholder="MyCompany"
+                      maxLength={11}
                       value={formData.senderID}
                       onChange={(e) => setFormData({ ...formData, senderID: e.target.value })}
                     />

@@ -18,6 +18,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -46,6 +47,7 @@ export default function RegisterPage() {
 
   const handleRegister = async () => {
     setError('');
+    setSuccess('');
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
@@ -66,7 +68,8 @@ export default function RegisterPage() {
       // Store token and redirect
       if (result.data?.token) {
         localStorage.setItem('token', result.data.token);
-        setTimeout(() => router.push('/dashboard'), 500);
+        setSuccess('Account created successfully! Redirecting...');
+        setTimeout(() => router.push('/dashboard'), 1500);
       }
       
       setLoading(false);
@@ -168,6 +171,15 @@ export default function RegisterPage() {
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-red-800">
                 <FiAlertCircle />
                 <p className="text-sm">{error}</p>
+              </div>
+            )}
+
+            {success && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2 text-green-800">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <p className="text-sm">{success}</p>
               </div>
             )}
 
