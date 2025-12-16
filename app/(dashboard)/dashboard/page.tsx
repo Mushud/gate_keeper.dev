@@ -14,16 +14,13 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Dollar01Icon,
   AlertCircleIcon,
   SmartPhone01Icon,
   MailIcon,
   CheckmarkCircle01Icon,
-  ShieldIcon,
   Message01Icon,
   ArrowRightIcon,
   Refresh01Icon,
-  Cancel01Icon,
   Calendar01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -71,13 +68,7 @@ function GridPattern({ width, height, x, y, squares, ...props }: any) {
   );
 }
 
-const Grid = ({
-  pattern,
-  size,
-}: {
-  pattern?: number[][];
-  size?: number;
-}) => {
+const Grid = ({ pattern, size }: { pattern?: number[][]; size?: number }) => {
   const p = pattern ?? [
     [Math.floor(Math.random() * 4) + 7, Math.floor(Math.random() * 6) + 1],
     [Math.floor(Math.random() * 4) + 7, Math.floor(Math.random() * 6) + 1],
@@ -115,6 +106,7 @@ interface Analytics {
     phoneOTPs: number[];
     emailOTPs: number[];
     verifiedOTPs: number[];
+    unverifiedOTPs: number[];
     kycVerifications: number[];
   };
   kyc?: {
@@ -150,27 +142,37 @@ export default function DashboardPage() {
         const phoneOTPs = [];
         const emailOTPs = [];
         const verifiedOTPs = [];
+        const unverifiedOTPs = [];
         const kycVerifications = [];
-        
+
         for (let i = 6; i >= 0; i--) {
           const date = new Date();
           date.setDate(date.getDate() - i);
-          const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+          const dayName = date.toLocaleDateString("en-US", {
+            weekday: "short",
+          });
           dates.push(dayName);
-          
+
           // Generate proportional data based on totals
           const phoneTotal = data.statistics?.byType?.phone || 0;
           const emailTotal = data.statistics?.byType?.email || 0;
           const verifiedTotal = data.statistics?.verifiedOTPs || 0;
           const kycTotal = data.kyc?.total || 0;
-          
+
           phoneOTPs.push(Math.floor(phoneTotal * (0.1 + Math.random() * 0.05)));
           emailOTPs.push(Math.floor(emailTotal * (0.1 + Math.random() * 0.05)));
-          verifiedOTPs.push(Math.floor(verifiedTotal * (0.1 + Math.random() * 0.05)));
-          kycVerifications.push(Math.floor(kycTotal * (0.1 + Math.random() * 0.05)));
+          verifiedOTPs.push(
+            Math.floor(verifiedTotal * (0.1 + Math.random() * 0.05))
+          );
+          unverifiedOTPs.push(
+            Math.floor((data.statistics?.unverifiedOTPs || 0) * (0.1 + Math.random() * 0.05))
+          );
+          kycVerifications.push(
+            Math.floor(kycTotal * (0.1 + Math.random() * 0.05))
+          );
         }
-        
-        return { dates, phoneOTPs, emailOTPs, verifiedOTPs, kycVerifications };
+
+        return { dates, phoneOTPs, emailOTPs, verifiedOTPs, unverifiedOTPs, kycVerifications };
       };
 
       // Transform backend structure to frontend structure
@@ -183,7 +185,8 @@ export default function DashboardPage() {
         todayOTPs: data.statistics?.today?.total || 0,
         todayVerified: data.statistics?.today?.verified || 0,
         recentRecords: data.recentRecords || [],
-        dailyStats: data.dailyStats || data.statistics?.daily || generateMockDailyStats(),
+        dailyStats:
+          data.dailyStats || data.statistics?.daily || generateMockDailyStats(),
         kyc: data.kyc
           ? {
               total: data.kyc.total || 0,
@@ -494,18 +497,31 @@ export default function DashboardPage() {
                       series: [
                         {
                           name: "Phone OTPs",
-                          data: analytics?.dailyStats?.phoneOTPs || [0, 0, 0, 0, 0, 0, 0],
+                          data: analytics?.dailyStats?.phoneOTPs || [
+                            0, 0, 0, 0, 0, 0, 0,
+                          ],
                           color: "#3b82f6",
                         },
                         {
                           name: "Email OTPs",
-                          data: analytics?.dailyStats?.emailOTPs || [0, 0, 0, 0, 0, 0, 0],
+                          data: analytics?.dailyStats?.emailOTPs || [
+                            0, 0, 0, 0, 0, 0, 0,
+                          ],
                           color: "#a855f7",
                         },
                         {
                           name: "Verified OTPs",
-                          data: analytics?.dailyStats?.verifiedOTPs || [0, 0, 0, 0, 0, 0, 0],
+                          data: analytics?.dailyStats?.verifiedOTPs || [
+                            0, 0, 0, 0, 0, 0, 0,
+                          ],
                           color: "#22c55e",
+                        },
+                        {
+                          name: "Unverified OTPs",
+                          data: analytics?.dailyStats?.unverifiedOTPs || [
+                            0, 0, 0, 0, 0, 0, 0,
+                          ],
+                          color: "#b90606ff",
                         },
                       ],
                       tooltip: {
@@ -614,7 +630,9 @@ export default function DashboardPage() {
                         series: [
                           {
                             name: "KYC Verifications",
-                            data: analytics?.dailyStats?.kycVerifications || [0, 0, 0, 0, 0, 0, 0],
+                            data: analytics?.dailyStats?.kycVerifications || [
+                              0, 0, 0, 0, 0, 0, 0,
+                            ],
                             color: "#f59e0b",
                             fillColor: {
                               linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
