@@ -815,7 +815,7 @@ export default function DashboardPage() {
                     </div>
                     <HugeiconsIcon
                       icon={ArrowRightIcon}
-                      size={48}
+                      size={20}
                       strokeWidth={1.5}
                       className="text-zinc-400 group-hover:text-zinc-900 transition-colors"
                     />
