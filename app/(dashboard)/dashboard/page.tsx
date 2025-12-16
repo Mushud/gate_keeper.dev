@@ -30,7 +30,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CircleAlertIcon } from "lucide-react";
 
-export function GridPattern({ width, height, x, y, squares, ...props }: any) {
+function GridPattern({ width, height, x, y, squares, ...props }: any) {
   const patternId = useId();
 
   return (
@@ -71,7 +71,7 @@ export function GridPattern({ width, height, x, y, squares, ...props }: any) {
   );
 }
 
-export const Grid = ({
+const Grid = ({
   pattern,
   size,
 }: {
@@ -629,7 +629,7 @@ export default function DashboardPage() {
                           backgroundColor: "#18181b",
                           borderColor: "#18181b",
                           style: { color: "#ffffff" },
-                          formatter: function () {
+                          formatter: function (this: any): string {
                             return `<b>${this.x}</b><br/>${this.series.name}: <b>${this.y}</b>`;
                           },
                         },

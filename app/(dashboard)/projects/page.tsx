@@ -24,7 +24,7 @@ let projectsCache: Project[] | null = null;
 let cacheTimestamp = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-export function GridPattern({ width, height, x, y, squares, ...props }: any) {
+function GridPattern({ width, height, x, y, squares, ...props }: any) {
   const patternId = useId();
 
   return (
@@ -65,7 +65,7 @@ export function GridPattern({ width, height, x, y, squares, ...props }: any) {
   );
 }
 
-export const Grid = ({
+const Grid = ({
   pattern,
   size,
 }: {
