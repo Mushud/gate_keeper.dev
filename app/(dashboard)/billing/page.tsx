@@ -5,8 +5,10 @@ import { useAuth } from '@/lib/auth';
 import api from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FiDollarSign, FiTrendingDown, FiCreditCard, FiPackage, FiAlertCircle } from 'react-icons/fi';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Dollar01Icon, ArrowMoveUpRightIcon, CreditCardAcceptIcon, Package01Icon, AlertCircleIcon } from '@hugeicons/core-free-icons';
 import { PaymentModal } from '@/components/PaymentModal';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface BalanceInfo {
   accountID: string;
@@ -80,13 +82,7 @@ export default function BillingPage() {
     fetchBalance(); // Refresh balance
   };
 
-  if (loading || loadingPackages) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-zinc-900"></div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="p-8">
@@ -109,44 +105,65 @@ export default function BillingPage() {
 
       {/* Current Balance */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card className="md:col-span-1">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-zinc-600 mb-2">Current Balance</p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-4xl font-bold text-zinc-900">
-                    {balanceInfo?.balance.toLocaleString() || 0}
-                  </p>
-                  <span className="text-sm text-zinc-600">credits</span>
+        {loading ? (
+          <>
+            <Card className="md:col-span-1">
+              <CardContent className="p-6 space-y-3">
+                <Skeleton className="h-4 w-1/3 rounded" />
+                <Skeleton className="h-12 w-1/2 rounded" />
+                <Skeleton className="h-3 w-2/3 rounded" />
+              </CardContent>
+            </Card>
+            <Card className="md:col-span-2">
+              <CardContent className="p-6 space-y-3">
+                <Skeleton className="h-6 w-1/2 rounded" />
+                <Skeleton className="h-4 w-full rounded" />
+                <Skeleton className="h-4 w-5/6 rounded" />
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <>
+            <Card className="md:col-span-1">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-zinc-600 mb-2">Current Balance</p>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-4xl font-bold text-zinc-900">
+                        {balanceInfo?.balance.toLocaleString() || 0}
+                      </p>
+                      <span className="text-sm text-zinc-600">credits</span>
+                    </div>
+                    <p className="text-xs text-zinc-500 mt-2">
+                      Account: {balanceInfo?.accountID}
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-full bg-blue-100">
+                    <HugeiconsIcon icon={Dollar01Icon} size={32} strokeWidth={1.5} className="text-blue-600" />
+                  </div>
                 </div>
-                <p className="text-xs text-zinc-500 mt-2">
-                  Account: {balanceInfo?.accountID}
-                </p>
-              </div>
-              <div className="p-4 rounded-full bg-blue-100">
-                <FiDollarSign className="w-8 h-8 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
 
-        <Card className="md:col-span-2">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="p-3 rounded-full bg-amber-100">
-                <FiAlertCircle className="w-6 h-6 text-amber-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-zinc-900 mb-1">How Credits Work</h3>
-                <p className="text-sm text-zinc-600">
-                  Each OTP sent (via SMS or email) consumes 1 credit from your account balance. 
-                  Purchase credits below to ensure uninterrupted service. Credits never expire.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <Card className="md:col-span-2">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-full bg-amber-100">
+                    <HugeiconsIcon icon={AlertCircleIcon} size={24} strokeWidth={1.5} className="text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-zinc-900 mb-1">How Credits Work</h3>
+                    <p className="text-sm text-zinc-600">
+                      Each OTP sent (via SMS or email) consumes 1 credit from your account balance. 
+                      Purchase credits below to ensure uninterrupted service. Credits never expire.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
 
       {/* Low Balance Warning */}
@@ -154,7 +171,7 @@ export default function BillingPage() {
         <Card className="mb-8 border-amber-200 bg-amber-50">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <FiTrendingDown className="w-5 h-5 text-amber-600" />
+              <HugeiconsIcon icon={ArrowMoveUpRightIcon} size={20} strokeWidth={1.5} className="text-amber-600" />
               <p className="text-sm text-amber-800">
                 <strong>Low Balance Warning:</strong> Your credit balance is running low. 
                 Purchase more credits to avoid service interruption.
@@ -169,7 +186,24 @@ export default function BillingPage() {
         <h2 className="text-2xl font-bold text-zinc-900 mb-2">Purchase Credits</h2>
         <p className="text-zinc-600 mb-6">Choose a package that fits your needs</p>
 
-        {pricingPlans.length === 0 ? (
+        {loadingPackages ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, idx) => (
+              <Card key={idx}>
+                <CardHeader className="pb-4">
+                  <Skeleton className="h-5 w-1/2 rounded" />
+                  <Skeleton className="h-3 w-1/3 rounded mt-2" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Skeleton className="h-8 w-1/2 rounded" />
+                  <Skeleton className="h-4 w-full rounded" />
+                  <Skeleton className="h-4 w-3/4 rounded" />
+                  <Skeleton className="h-10 w-full rounded" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : pricingPlans.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center">
               <p className="text-zinc-600">No billing packages available at this time.</p>
@@ -238,7 +272,7 @@ export default function BillingPage() {
                       plan.popular ? 'bg-blue-600 hover:bg-blue-700' : ''
                     }`}
                   >
-                    <FiCreditCard className="mr-2" />
+                    <HugeiconsIcon icon={CreditCardAcceptIcon} size={16} strokeWidth={1.5} className="mr-2" />
                     Purchase
                   </Button>
                 </CardContent>
@@ -252,7 +286,7 @@ export default function BillingPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FiPackage className="w-5 h-5" />
+            <HugeiconsIcon icon={Package01Icon} size={20} strokeWidth={1.5} />
             Credit Usage
           </CardTitle>
           <CardDescription>Understanding how credits are consumed</CardDescription>

@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FiPlus, FiEdit2, FiTrash2, FiCopy, FiEye, FiEyeOff, FiRefreshCw } from 'react-icons/fi';
+import { Add01Icon, Edit02Icon, Delete01Icon, Copy01Icon, EyeIcon, EyeFreeIcons, Refresh01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { CardSkeleton } from '@/components/ui/skeleton';
 
 interface Project {
   _id: string;
@@ -17,10 +19,15 @@ interface Project {
   createdAt: string;
 }
 
+// Simple in-memory cache for projects
+let projectsCache: Project[] | null = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+
 export default function ProjectsPage() {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showApiKey, setShowApiKey] = useState<string | null>(null);
@@ -30,7 +37,13 @@ export default function ProjectsPage() {
   const [newApiKey, setNewApiKey] = useState('');
 
   useEffect(() => {
-    fetchProjects();
+    // Only fetch if we don't have cached data or cache is stale
+    if (!projectsCache || Date.now() - cacheTimestamp > CACHE_DURATION) {
+      fetchProjects();
+    } else {
+      // Use cached data, no loading spinner
+      setProjects(projectsCache);
+    }
   }, []);
 
   const fetchProjects = async () => {
@@ -41,6 +54,10 @@ export default function ProjectsPage() {
       const projectsData = response.data.payload?.projects || response.data.projects || [];
       console.log('Extracted projects:', projectsData);
       setProjects(projectsData);
+      
+      // Update cache
+      projectsCache = projectsData;
+      cacheTimestamp = Date.now();
     } catch (err: any) {
       console.error('Failed to fetch projects:', err);
       setError('Failed to load projects');
@@ -70,6 +87,9 @@ export default function ProjectsPage() {
       
       setSuccess('Project created successfully!');
       setFormData({ name: '', senderID: '' });
+      // Invalidate cache to fetch fresh data
+      projectsCache = null;
+      cacheTimestamp = 0;
       fetchProjects();
       
       // Don't clear the modal or success message - let user copy the API key
@@ -93,6 +113,9 @@ export default function ProjectsPage() {
     try {
       await api.delete(`/api/project/${projectId}`);
       setSuccess('Project deleted successfully');
+      // Invalidate cache to fetch fresh data
+      projectsCache = null;
+      cacheTimestamp = 0;
       fetchProjects();
       setTimeout(() => setSuccess(''), 2000);
     } catch (err: any) {
@@ -129,14 +152,6 @@ export default function ProjectsPage() {
     setError('');
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-zinc-900"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
@@ -145,7 +160,7 @@ export default function ProjectsPage() {
           <p className="text-zinc-600 mt-1">Manage your OTP projects and API keys</p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
-          <FiPlus className="mr-2" />
+          <HugeiconsIcon icon={Add01Icon} size={18} strokeWidth={1.5} className="mr-2" />
           Create Project
         </Button>
       </div>
@@ -157,13 +172,20 @@ export default function ProjectsPage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map((project) => (
+        {loading ? (
+          <>
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+          </>
+        ) : null}
+        {!loading && projects.map((project) => (
           <Card key={project._id}>
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="text-lg">{project.name}</CardTitle>
-                  <CardDescription className="mt-1">
+                  <CardTitle className="text-lg font-semibold">{project.name}</CardTitle>
+                  <CardDescription className="mt-1 text-sm">
                     Sender ID: {project.senderID}
                   </CardDescription>
                 </div>
@@ -186,7 +208,7 @@ export default function ProjectsPage() {
                       variant="ghost"
                       onClick={() => copyToClipboard(newApiKey)}
                     >
-                      <FiCopy className="w-4 h-4" />
+                      <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
                     </Button>
                   </div>
                   <code className="text-xs bg-white p-2 rounded block break-all">
@@ -205,7 +227,7 @@ export default function ProjectsPage() {
                   onClick={() => handleRegenerateKey(project._id)}
                   className="flex-1"
                 >
-                  <FiRefreshCw className="mr-1 w-3 h-3" />
+                  <HugeiconsIcon icon={Refresh01Icon} size={14} strokeWidth={1.5} className="mr-1" />
                   Regenerate Key
                 </Button>
                 <Button
@@ -213,18 +235,18 @@ export default function ProjectsPage() {
                   variant="ghost"
                   onClick={() => handleDeleteProject(project._id)}
                 >
-                  <FiTrash2 className="w-4 h-4 text-red-600" />
+                  <HugeiconsIcon icon={Delete01Icon} size={16} strokeWidth={1.5} className="text-red-600" />
                 </Button>
               </div>
             </CardContent>
           </Card>
         ))}
 
-        {projects.length === 0 && (
+        {!loading && projects.length === 0 && (
           <div className="col-span-full text-center py-12">
             <p className="text-zinc-600 mb-4">No projects yet</p>
             <Button onClick={() => setShowCreateModal(true)}>
-              <FiPlus className="mr-2" />
+              <HugeiconsIcon icon={Add01Icon} size={18} strokeWidth={1.5} className="mr-2" />
               Create Your First Project
             </Button>
           </div>
@@ -293,7 +315,7 @@ export default function ProjectsPage() {
                           variant="ghost"
                           onClick={() => copyToClipboard(newApiKey)}
                         >
-                          <FiCopy className="w-4 h-4" />
+                          <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
                         </Button>
                       </div>
                       <code className="text-xs bg-zinc-50 p-2 rounded block break-all">

@@ -7,7 +7,8 @@ import { authApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FiShield, FiAlertCircle } from "react-icons/fi";
+import { HugeiconsIcon } from '@hugeicons/react';
+import { ShieldIcon, AlertCircleIcon } from '@hugeicons/core-free-icons';
 import { Boxes } from "@/components/ui/background-boxes";
 
 export default function LoginPage() {
@@ -90,7 +91,7 @@ export default function LoginPage() {
           {/* Logo - Top Left */}
           <div className="absolute top-12 left-12 flex items-center gap-3">
             <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center">
-              <FiShield className="text-zinc-900 text-2xl" />
+              <HugeiconsIcon icon={ShieldIcon} size={24} strokeWidth={1.5} className="text-zinc-900" />
             </div>
             <div>
               <div className="text-2xl font-bold text-white">GateKeeperPro</div>
@@ -143,7 +144,7 @@ export default function LoginPage() {
           <div className="mb-8 lg:hidden">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 rounded-xl bg-zinc-900 flex items-center justify-center">
-                <FiShield className="text-white text-2xl" />
+                <HugeiconsIcon icon={ShieldIcon} size={24} strokeWidth={1.5} className="text-white" />
               </div>
               <div>
                 <div className="text-xl font-bold">GateKeeperPro</div>
@@ -162,7 +163,7 @@ export default function LoginPage() {
           <div className="space-y-4">
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-red-800">
-                <FiAlertCircle />
+                <HugeiconsIcon icon={AlertCircleIcon} size={16} strokeWidth={1.5} />
                 <p className="text-sm">{error}</p>
               </div>
             )}

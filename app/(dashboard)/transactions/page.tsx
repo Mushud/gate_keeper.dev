@@ -5,15 +5,17 @@ import { useAuth } from '@/lib/auth';
 import api from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { HugeiconsIcon } from '@hugeicons/react';
 import { 
-  FiCreditCard, 
-  FiCheck, 
-  FiX, 
-  FiClock, 
-  FiPackage,
-  FiCalendar,
-  FiDollarSign 
-} from 'react-icons/fi';
+  CreditCardAcceptIcon, 
+  CheckmarkCircleIcon, 
+  Cancel01Icon, 
+  Clock01Icon, 
+  Package01Icon,
+  Calendar01Icon,
+  Dollar01Icon 
+} from '@hugeicons/core-free-icons';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Transaction {
   transactionId: string;
@@ -57,13 +59,13 @@ export default function TransactionsPage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'success':
-        return <FiCheck className="w-4 h-4" />;
+        return <HugeiconsIcon icon={CheckmarkCircleIcon} size={16} strokeWidth={1.5} />;
       case 'failed':
-        return <FiX className="w-4 h-4" />;
+        return <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={1.5} />;
       case 'pending':
-        return <FiClock className="w-4 h-4" />;
+        return <HugeiconsIcon icon={Clock01Icon} size={16} strokeWidth={1.5} />;
       default:
-        return <FiClock className="w-4 h-4" />;
+        return <HugeiconsIcon icon={Clock01Icon} size={16} strokeWidth={1.5} />;
     }
   };
 
@@ -93,13 +95,7 @@ export default function TransactionsPage() {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-zinc-900"></div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="p-8">
@@ -114,11 +110,58 @@ export default function TransactionsPage() {
         </div>
       )}
 
-      {transactions.length === 0 ? (
+      {loading ? (
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-zinc-50 border-b border-zinc-200">
+                  <tr>
+                    <th className="text-left px-6 py-4 text-xs font-semibold text-zinc-600 uppercase tracking-wider">
+                      Package
+                    </th>
+                    <th className="text-left px-6 py-4 text-xs font-semibold text-zinc-600 uppercase tracking-wider">
+                      Reference
+                    </th>
+                    <th className="text-left px-6 py-4 text-xs font-semibold text-zinc-600 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="text-right px-6 py-4 text-xs font-semibold text-zinc-600 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="text-right px-6 py-4 text-xs font-semibold text-zinc-600 uppercase tracking-wider">
+                      Credits
+                    </th>
+                    <th className="text-center px-6 py-4 text-xs font-semibold text-zinc-600 uppercase tracking-wider">
+                      Channel
+                    </th>
+                    <th className="text-center px-6 py-4 text-xs font-semibold text-zinc-600 uppercase tracking-wider">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-200">
+                  {[...Array(8)].map((_, idx) => (
+                    <tr key={idx}>
+                      <td className="px-6 py-4"><Skeleton className="h-5 w-24 rounded" /></td>
+                      <td className="px-6 py-4"><Skeleton className="h-5 w-32 rounded" /></td>
+                      <td className="px-6 py-4"><Skeleton className="h-5 w-40 rounded" /></td>
+                      <td className="px-6 py-4"><Skeleton className="h-5 w-20 rounded ml-auto" /></td>
+                      <td className="px-6 py-4"><Skeleton className="h-5 w-16 rounded ml-auto" /></td>
+                      <td className="px-6 py-4"><Skeleton className="h-5 w-16 rounded mx-auto" /></td>
+                      <td className="px-6 py-4"><Skeleton className="h-5 w-20 rounded mx-auto" /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      ) : transactions.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-100 mb-4">
-              <FiCreditCard className="w-8 h-8 text-zinc-400" />
+              <HugeiconsIcon icon={CreditCardAcceptIcon} size={32} strokeWidth={1.5} className="text-zinc-400" />
             </div>
             <h3 className="text-lg font-semibold text-zinc-900 mb-2">
               No transactions yet
@@ -170,7 +213,7 @@ export default function TransactionsPage() {
                               ? 'bg-red-100'
                               : 'bg-yellow-100'
                           }`}>
-                            <FiPackage className={`w-4 h-4 ${
+                            <HugeiconsIcon icon={Package01Icon} size={16} strokeWidth={1.5} className={`${
                               transaction.status === 'success' 
                                 ? 'text-green-600' 
                                 : transaction.status === 'failed'
@@ -220,7 +263,7 @@ export default function TransactionsPage() {
                           </Badge>
                           {transaction.credited && (
                             <div className="flex items-center gap-1 text-xs text-green-600">
-                              <FiCheck className="w-3 h-3" />
+                              <HugeiconsIcon icon={CheckmarkCircleIcon} size={12} strokeWidth={1.5} />
                               <span>Credited</span>
                             </div>
                           )}

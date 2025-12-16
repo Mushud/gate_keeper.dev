@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FiPlus, FiCopy, FiExternalLink, FiCode, FiTrash2 } from 'react-icons/fi';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Add01Icon, Copy01Icon, Link01Icon, CodeIcon, Delete01Icon } from '@hugeicons/core-free-icons';
 
 interface Project {
   _id: string;
@@ -215,7 +216,7 @@ export default function CheckoutPage() {
           <p className="text-zinc-600 mt-1">Create OTP verification checkout flows</p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
-          <FiPlus className="mr-2" />
+          <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.5} className="mr-2" />
           Create Session
         </Button>
       </div>
@@ -243,7 +244,7 @@ export default function CheckoutPage() {
       <Card className="mb-6 border-blue-200 bg-blue-50/50">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <FiCode className="w-5 h-5 text-blue-600" />
+            <HugeiconsIcon icon={CodeIcon} size={20} strokeWidth={1.5} className="text-blue-600" />
             <CardTitle className="text-lg">Developer API - Create Checkout URL</CardTitle>
           </div>
           <CardDescription>
@@ -262,7 +263,7 @@ export default function CheckoutPage() {
                 variant="ghost"
                 onClick={() => copyToClipboard(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/checkout/create`)}
               >
-                <FiCopy className="w-4 h-4" />
+                <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
               </Button>
             </div>
           </div>
@@ -306,7 +307,7 @@ Content-Type: application/json`}
   }
 }`)}
               >
-                <FiCopy className="w-4 h-4" />
+                <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
               </Button>
             </div>
           </div>
@@ -349,7 +350,7 @@ Content-Type: application/json`}
     "successUrl": "https://yourapp.com/success"
   }'`)}
               >
-                <FiCopy className="w-4 h-4" />
+                <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
               </Button>
             </div>
           </div>
@@ -399,7 +400,7 @@ console.log(data.checkoutUrl); // Send URL for verification`}
 const data = await response.json();
 console.log(data.checkoutUrl);`)}
               >
-                <FiCopy className="w-4 h-4" />
+                <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
               </Button>
             </div>
           </div>
@@ -461,7 +462,7 @@ console.log(data.checkoutUrl);`)}
                       variant="ghost"
                       onClick={() => copyToClipboard(session.checkoutUrl)}
                     >
-                      <FiCopy className="w-4 h-4" />
+                      <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
                     </Button>
                   </div>
                 </div>
@@ -499,7 +500,7 @@ console.log(data.checkoutUrl);`)}
                     setShowCodeModal(true);
                   }}
                 >
-                  <FiCode className="mr-1 w-4 h-4" />
+                  <HugeiconsIcon icon={CodeIcon} size={16} strokeWidth={1.5} className="mr-1" />
                   View Integration Code
                 </Button>
                 <Button
@@ -507,7 +508,7 @@ console.log(data.checkoutUrl);`)}
                   variant="outline"
                   onClick={() => window.open(session.checkoutUrl, '_blank')}
                 >
-                  <FiExternalLink className="mr-1 w-4 h-4" />
+                  <HugeiconsIcon icon={CodeIcon} size={16} strokeWidth={1.5} className="mr-1" />
                   Test Checkout
                 </Button>
               </div>
@@ -520,7 +521,7 @@ console.log(data.checkoutUrl);`)}
             <CardContent className="p-12 text-center">
               <p className="text-zinc-600 mb-4">No checkout sessions yet</p>
               <Button onClick={() => setShowCreateModal(true)}>
-                <FiPlus className="mr-2" />
+                <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.5} className="mr-2" />
                 Create Your First Session
               </Button>
             </CardContent>
@@ -738,7 +739,7 @@ console.log(data.checkoutUrl);`)}
                     variant="ghost"
                     onClick={() => copyToClipboard(selectedSession.checkoutUrl)}
                   >
-                    <FiCopy className="mr-1 w-4 h-4" />
+                    <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} className="mr-1" />
                     Copy
                   </Button>
                 </div>
@@ -755,7 +756,7 @@ console.log(data.checkoutUrl);`)}
                     variant="ghost"
                     onClick={() => copyToClipboard(getIntegrationCode(selectedSession))}
                   >
-                    <FiCopy className="mr-1 w-4 h-4" />
+                    <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} className="mr-1" />
                     Copy
                   </Button>
                 </div>

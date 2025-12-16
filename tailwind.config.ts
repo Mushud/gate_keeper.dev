@@ -10,7 +10,7 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Inter", "sans-serif"],
+        sans: ["Lato", "'Helvetica Neue'", "Arial", "Helvetica", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import api from '@/lib/api';
-import { FiCheck, FiLoader, FiX, FiSmartphone } from 'react-icons/fi';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { CheckmarkCircleIcon, Loading01Icon, Cancel01Icon, SmartPhone01Icon } from '@hugeicons/core-free-icons';
 
 interface PricingPlan {
   id: string;
@@ -212,7 +213,7 @@ export function PaymentModal({ isOpen, onClose, package: pkg, onSuccess }: Payme
                 >
                   {status === 'initiating' ? (
                     <>
-                      <FiLoader className="mr-2 h-4 w-4 animate-spin" />
+                      <HugeiconsIcon icon={Loading01Icon} size={16} strokeWidth={1.5} className="mr-2 animate-spin" />
                       Processing...
                     </>
                   ) : (
@@ -224,7 +225,7 @@ export function PaymentModal({ isOpen, onClose, package: pkg, onSuccess }: Payme
           ) : status === 'pending' ? (
             <div className="text-center py-8">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
-                <FiSmartphone className="w-8 h-8 text-blue-600 animate-pulse" />
+                <HugeiconsIcon icon={SmartPhone01Icon} size={32} strokeWidth={1.5} className="text-blue-600 animate-pulse" />
               </div>
               <h3 className="text-lg font-semibold text-zinc-900 mb-2">
                 Waiting for Payment Approval
@@ -234,14 +235,14 @@ export function PaymentModal({ isOpen, onClose, package: pkg, onSuccess }: Payme
                 {PAYMENT_METHODS.find(m => m.value === paymentMethod)?.label}
               </p>
               <div className="flex items-center justify-center gap-2 text-sm text-zinc-500">
-                <FiLoader className="h-4 w-4 animate-spin" />
+                <HugeiconsIcon icon={Loading01Icon} size={16} strokeWidth={1.5} className="animate-spin" />
                 <span>Waiting for confirmation...</span>
               </div>
             </div>
           ) : status === 'success' ? (
             <div className="text-center py-8">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
-                <FiCheck className="w-8 h-8 text-green-600" />
+                <HugeiconsIcon icon={CheckmarkCircleIcon} size={32} strokeWidth={1.5} className="text-green-600" />
               </div>
               <h3 className="text-lg font-semibold text-zinc-900 mb-2">
                 Payment Successful!
@@ -253,7 +254,7 @@ export function PaymentModal({ isOpen, onClose, package: pkg, onSuccess }: Payme
           ) : (
             <div className="text-center py-8">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
-                <FiX className="w-8 h-8 text-red-600" />
+                <HugeiconsIcon icon={Cancel01Icon} size={32} strokeWidth={1.5} className="text-red-600" />
               </div>
               <h3 className="text-lg font-semibold text-zinc-900 mb-2">
                 Payment Failed

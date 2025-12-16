@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FiCode, FiCopy, FiBook, FiLock, FiCheckCircle, FiAlertCircle, FiShield } from 'react-icons/fi';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { CodeIcon, Copy01Icon, BookOpen01Icon, LockPasswordIcon, CheckmarkCircle01Icon, AlertCircleIcon, ShieldIcon } from '@hugeicons/core-free-icons';
 
 export default function DeveloperDocsPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -26,12 +27,12 @@ export default function DeveloperDocsPage() {
         >
           {copiedId === id ? (
             <>
-              <FiCheckCircle className="w-3 h-3 mr-1" />
+              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} strokeWidth={1.5} className="mr-1" />
               Copied
             </>
           ) : (
             <>
-              <FiCopy className="w-3 h-3 mr-1" />
+              <HugeiconsIcon icon={Copy01Icon} size={12} strokeWidth={1.5} className="mr-1" />
               Copy
             </>
           )}
@@ -47,7 +48,7 @@ export default function DeveloperDocsPage() {
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-zinc-900 flex items-center gap-2">
-          <FiBook className="w-8 h-8" />
+          <HugeiconsIcon icon={BookOpen01Icon} size={32} strokeWidth={1.5} />
           Developer Documentation
         </h1>
         <p className="text-zinc-600 mt-2">
@@ -59,7 +60,7 @@ export default function DeveloperDocsPage() {
       <Card className="mb-6 border-blue-200 bg-blue-50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FiAlertCircle className="w-5 h-5 text-blue-600" />
+            <HugeiconsIcon icon={AlertCircleIcon} size={20} strokeWidth={1.5} className="text-blue-600" />
             Quick Start Guide
           </CardTitle>
         </CardHeader>
@@ -77,7 +78,7 @@ export default function DeveloperDocsPage() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FiLock className="w-5 h-5" />
+            <HugeiconsIcon icon={LockPasswordIcon} size={20} strokeWidth={1.5} />
             Authentication
           </CardTitle>
           <CardDescription>All API requests require authentication using your project API key</CardDescription>
@@ -322,7 +323,7 @@ if (data.verified) {
         <CardContent>
           <div className="space-y-4">
             <div className="flex gap-3">
-              <FiCheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} strokeWidth={1.5} className="text-green-600 flex-shrink-0 mt-0.5" />
               <div>
                 <h4 className="font-semibold text-sm mb-1">Store API Keys Securely</h4>
                 <p className="text-sm text-zinc-600">
@@ -332,7 +333,7 @@ if (data.verified) {
             </div>
 
             <div className="flex gap-3">
-              <FiCheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} strokeWidth={1.5} className="text-green-600 flex-shrink-0 mt-0.5" />
               <div>
                 <h4 className="font-semibold text-sm mb-1">Save the Reference ID</h4>
                 <p className="text-sm text-zinc-600">
@@ -342,7 +343,7 @@ if (data.verified) {
             </div>
 
             <div className="flex gap-3">
-              <FiCheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} strokeWidth={1.5} className="text-green-600 flex-shrink-0 mt-0.5" />
               <div>
                 <h4 className="font-semibold text-sm mb-1">Handle Errors Gracefully</h4>
                 <p className="text-sm text-zinc-600">
@@ -352,7 +353,7 @@ if (data.verified) {
             </div>
 
             <div className="flex gap-3">
-              <FiCheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} strokeWidth={1.5} className="text-green-600 flex-shrink-0 mt-0.5" />
               <div>
                 <h4 className="font-semibold text-sm mb-1">OTP Expiration</h4>
                 <p className="text-sm text-zinc-600">
@@ -362,7 +363,7 @@ if (data.verified) {
             </div>
 
             <div className="flex gap-3">
-              <FiCheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} strokeWidth={1.5} className="text-green-600 flex-shrink-0 mt-0.5" />
               <div>
                 <h4 className="font-semibold text-sm mb-1">Rate Limiting</h4>
                 <p className="text-sm text-zinc-600">
@@ -372,7 +373,7 @@ if (data.verified) {
             </div>
 
             <div className="flex gap-3">
-              <FiCheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} strokeWidth={1.5} className="text-green-600 flex-shrink-0 mt-0.5" />
               <div>
                 <h4 className="font-semibold text-sm mb-1">Name Auto-Resolution</h4>
                 <p className="text-sm text-zinc-600">
@@ -388,7 +389,7 @@ if (data.verified) {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FiShield className="w-5 h-5" />
+            <HugeiconsIcon icon={ShieldIcon} size={20} strokeWidth={1.5} />
             KYC Phone Verification
           </CardTitle>
           <CardDescription>
@@ -501,7 +502,7 @@ if (data.verified) {
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-900 flex items-center gap-2">
-              <FiAlertCircle className="w-4 h-4 flex-shrink-0" />
+              <HugeiconsIcon icon={AlertCircleIcon} size={16} strokeWidth={1.5} className="flex-shrink-0" />
               <span>
                 <strong>Note:</strong> Each verification deducts 1 credit regardless of whether a name is found or not.
                 Make sure you have sufficient balance before making requests.

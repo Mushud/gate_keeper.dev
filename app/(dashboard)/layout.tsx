@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AuthProvider, useAuth } from '@/lib/auth';
-import { FiShield, FiHome, FiFolder, FiShoppingCart, FiBarChart2, FiFileText, FiCreditCard, FiSettings, FiLogOut, FiBook, FiMenu, FiX } from 'react-icons/fi';
+import { Home01Icon, Folder01Icon, ShieldIcon, ShoppingCart01Icon, File01Icon, BookOpen01Icon, CreditCardIcon, Settings02Icon, Menu01Icon, Cancel01Icon, Logout01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
@@ -38,17 +39,34 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   }
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: FiHome },
-    { name: 'Projects', href: '/projects', icon: FiFolder },
-    { name: 'KYC Verification', href: '/kyc', icon: FiShield },
-    { name: 'Checkout', href: '/checkout', icon: FiShoppingCart },
-    // { name: 'Analytics', href: '/analytics', icon: FiBarChart2 },
-    { name: 'Logs', href: '/logs', icon: FiFileText },
-    { name: 'Developer', href: '/developer', icon: FiBook },
-    { name: 'Billing', href: '/billing', icon: FiCreditCard },
-    { name: 'Transactions', href: '/transactions', icon: FiCreditCard },
-    { name: 'Settings', href: '/settings', icon: FiSettings },
+    { name: 'Dashboard', href: '/dashboard', icon: 'home' },
+    { name: 'Projects', href: '/projects', icon: 'folder' },
+    { name: 'KYC Verification', href: '/kyc', icon: 'shield' },
+    { name: 'Checkout', href: '/checkout', icon: 'shopping-cart' },
+    // { name: 'Analytics', href: '/analytics', icon: 'bar-chart' },
+    { name: 'Logs', href: '/logs', icon: 'file-text' },
+    { name: 'Developer', href: '/developer', icon: 'book-open' },
+    { name: 'Billing', href: '/billing', icon: 'credit-card' },
+    { name: 'Transactions', href: '/transactions', icon: 'credit-card' },
+    { name: 'Settings', href: '/settings', icon: 'settings' },
   ];
+
+  const renderIcon = (iconName: string) => {
+    const size = 20;
+    const strokeWidth = 1.5;
+    
+    switch(iconName) {
+      case 'home': return <HugeiconsIcon icon={Home01Icon} size={size} strokeWidth={strokeWidth} />;
+      case 'folder': return <HugeiconsIcon icon={Folder01Icon} size={size} strokeWidth={strokeWidth} />;
+      case 'shield': return <HugeiconsIcon icon={ShieldIcon} size={size} strokeWidth={strokeWidth} />;
+      case 'shopping-cart': return <HugeiconsIcon icon={ShoppingCart01Icon} size={size} strokeWidth={strokeWidth} />;
+      case 'file-text': return <HugeiconsIcon icon={File01Icon} size={size} strokeWidth={strokeWidth} />;
+      case 'book-open': return <HugeiconsIcon icon={BookOpen01Icon} size={size} strokeWidth={strokeWidth} />;
+      case 'credit-card': return <HugeiconsIcon icon={CreditCardIcon} size={size} strokeWidth={strokeWidth} />;
+      case 'settings': return <HugeiconsIcon icon={Settings02Icon} size={size} strokeWidth={strokeWidth} />;
+      default: return null;
+    }
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -67,7 +85,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-2 rounded-lg hover:bg-zinc-100 transition-colors"
           >
-            {sidebarOpen ? <FiX className="text-2xl" /> : <FiMenu className="text-2xl" />}
+            {sidebarOpen ? <HugeiconsIcon icon={Cancel01Icon} size={24} strokeWidth={1.5} /> : <HugeiconsIcon icon={Menu01Icon} size={24} strokeWidth={1.5} />}
           </button>
         </div>
       </div>
@@ -84,23 +102,23 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       <aside
         className={`
           fixed lg:sticky top-0 left-0 h-screen
-          w-64 bg-white border-r border-zinc-200 flex flex-col
+          w-64 bg-green-700 border-r border-white border-opacity-20 flex flex-col shadow-xl
           z-50 lg:z-auto
           transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
         {/* Logo - Desktop Only */}
-        <div className="hidden lg:block p-6 border-b border-zinc-200">
+        <div className="hidden lg:block p-6 border-b border-white border-opacity-30">
           <Link href="/dashboard" className="flex items-center gap-3">
             <img 
               src="/logo.png" 
               alt="GateKeeperPro" 
-              className="w-10 h-10 object-contain"
+              className="w-10 h-10 object-contain drop-shadow-lg"
             />
             <div>
-              <div className="font-bold text-lg">GateKeeperPro</div>
-              <div className="text-xs text-zinc-500">Developer Portal</div>
+              <div className="font-bold text-lg text-white">GateKeeperPro</div>
+              <div className="text-xs text-green-100">Developer Portal</div>
             </div>
           </Link>
         </div>
@@ -109,7 +127,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         <div className="lg:hidden h-20" />
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -117,13 +135,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 key={item.name}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
                   isActive
-                    ? 'bg-zinc-100 text-zinc-900'
-                    : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'
+                    ? 'bg-white bg-opacity-20 text-white border border-white border-opacity-40 shadow-md'
+                    : 'text-green-100 hover:bg-white hover:bg-opacity-10 hover:border border-white border-opacity-0 hover:border-opacity-20'
                 }`}
               >
-                <item.icon className="text-lg" />
+                {renderIcon(item.icon)}
                 {item.name}
               </Link>
             );
@@ -131,14 +149,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* User section */}
-        <div className="p-4 border-t border-zinc-200">
-          <div className="flex items-center gap-3 px-4 py-2 mb-2">
-            <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center text-white text-sm font-semibold">
+        <div className="p-4 border-t border-white border-opacity-30">
+          <div className="flex items-center gap-3 px-4 py-2 mb-3 bg-white bg-opacity-10 rounded-lg border border-white border-opacity-20">
+            <div className="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-white text-sm font-semibold border border-white border-opacity-30">
               {user.name.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate">{user.name}</div>
-              <div className="text-xs text-zinc-500 truncate">{user.email}</div>
+              <div className="text-sm font-medium text-white truncate">{user.name}</div>
+              <div className="text-xs text-green-100 truncate">{user.email}</div>
             </div>
           </div>
           <button
@@ -146,9 +164,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               logout();
               setSidebarOpen(false);
             }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-red-500 hover:bg-opacity-80 transition-all border border-white border-opacity-20 hover:border-white hover:border-opacity-40"
           >
-            <FiLogOut className="text-lg" />
+            <HugeiconsIcon icon={Cancel01Icon} size={20} strokeWidth={1.5} />
             Sign out
           </button>
         </div>

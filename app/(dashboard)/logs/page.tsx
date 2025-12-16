@@ -6,7 +6,9 @@ import api from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { FiSearch, FiFilter, FiCheckCircle, FiXCircle, FiMail, FiPhone, FiRefreshCw } from 'react-icons/fi';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Search01Icon, FilterIcon, CheckmarkCircle01Icon, CancelCircleIcon, Mail01Icon, SmartPhone02Icon, Refresh01Icon } from '@hugeicons/core-free-icons';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface OTPLog {
   _id: string;
@@ -95,13 +97,7 @@ export default function LogsPage() {
     a.click();
   };
 
-  if (loading && logs.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-zinc-900"></div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="p-8">
@@ -112,7 +108,7 @@ export default function LogsPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={fetchLogs} disabled={loading}>
-            <FiRefreshCw className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <HugeiconsIcon icon={Refresh01Icon} size={16} strokeWidth={1.5} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           <Button onClick={exportLogs} disabled={logs.length === 0}>
@@ -131,58 +127,67 @@ export default function LogsPage() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FiFilter className="w-5 h-5" />
+            <HugeiconsIcon icon={FilterIcon} size={20} strokeWidth={1.5} />
             Filters
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Search */}
-            <form onSubmit={handleSearch} className="flex gap-2">
-              <Input
-                placeholder="Search receiver, name, email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <Button type="submit" size="icon">
-                <FiSearch />
-              </Button>
-            </form>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Skeleton className="h-10 rounded" />
+              <Skeleton className="h-10 rounded" />
+              <Skeleton className="h-10 rounded" />
+              <Skeleton className="h-10 rounded" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Search */}
+              <form onSubmit={handleSearch} className="flex gap-2">
+                <Input
+                  placeholder="Search receiver, name, email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <Button type="submit" size="icon">
+                  <HugeiconsIcon icon={Search01Icon} size={16} strokeWidth={1.5} />
+                </Button>
+              </form>
 
-            {/* Status Filter */}
-            <select
-              className="px-3 py-2 border rounded-md"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">All Status</option>
-              <option value="verified">Verified</option>
-              <option value="unverified">Unverified</option>
-            </select>
+              {/* Status Filter */}
+              <select
+                className="px-3 py-2 border rounded-md"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="all">All Status</option>
+                <option value="verified">Verified</option>
+                <option value="unverified">Unverified</option>
+              </select>
 
-            {/* Type Filter */}
-            <select
-              className="px-3 py-2 border rounded-md"
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="all">All Types</option>
-              <option value="phone">Phone (SMS)</option>
-              <option value="email">Email</option>
-            </select>
+              {/* Type Filter */}
+              <select
+                className="px-3 py-2 border rounded-md"
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+              >
+                <option value="all">All Types</option>
+                <option value="phone">Phone (SMS)</option>
+                <option value="email">Email</option>
+              </select>
 
-            {/* Limit */}
-            <select
-              className="px-3 py-2 border rounded-md"
-              value={limit}
-              onChange={(e) => setLimit(parseInt(e.target.value))}
-            >
-              <option value="25">Show 25</option>
-              <option value="50">Show 50</option>
-              <option value="100">Show 100</option>
-              <option value="200">Show 200</option>
-            </select>
-          </div>
+              {/* Limit */}
+              <select
+                className="px-3 py-2 border rounded-md"
+                value={limit}
+                onChange={(e) => setLimit(parseInt(e.target.value))}
+              >
+                <option value="25">Show 25</option>
+                <option value="50">Show 50</option>
+                <option value="100">Show 100</option>
+                <option value="200">Show 200</option>
+              </select>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -195,7 +200,36 @@ export default function LogsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {logs.length === 0 ? (
+          {loading ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-zinc-700">Reference</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-zinc-700">Project</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-zinc-700">Receiver</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-zinc-700">Type</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-zinc-700">Status</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-zinc-700">Generated</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-zinc-700">Verified</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...Array(10)].map((_, idx) => (
+                    <tr key={idx} className="border-b">
+                      <td className="py-3 px-4"><Skeleton className="h-5 w-20 rounded" /></td>
+                      <td className="py-3 px-4"><Skeleton className="h-5 w-24 rounded" /></td>
+                      <td className="py-3 px-4"><Skeleton className="h-5 w-32 rounded" /></td>
+                      <td className="py-3 px-4"><Skeleton className="h-5 w-16 rounded" /></td>
+                      <td className="py-3 px-4"><Skeleton className="h-5 w-20 rounded" /></td>
+                      <td className="py-3 px-4"><Skeleton className="h-5 w-40 rounded" /></td>
+                      <td className="py-3 px-4"><Skeleton className="h-5 w-40 rounded" /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : logs.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-zinc-600">No OTP logs found</p>
             </div>
@@ -241,7 +275,7 @@ export default function LogsPage() {
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
                           log.type === 'phone' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
                         }`}>
-                          {log.type === 'phone' ? <FiPhone className="w-3 h-3" /> : <FiMail className="w-3 h-3" />}
+                          {log.type === 'phone' ? <HugeiconsIcon icon={SmartPhone02Icon} size={12} strokeWidth={1.5} /> : <HugeiconsIcon icon={Mail01Icon} size={12} strokeWidth={1.5} />}
                           {log.type}
                         </span>
                       </td>
@@ -249,7 +283,7 @@ export default function LogsPage() {
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
                           log.verified ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
-                          {log.verified ? <FiCheckCircle className="w-3 h-3" /> : <FiXCircle className="w-3 h-3" />}
+                          {log.verified ? <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} strokeWidth={1.5} /> : <HugeiconsIcon icon={CancelCircleIcon} size={12} strokeWidth={1.5} />}
                           {log.verified ? 'Verified' : 'Unverified'}
                         </span>
                       </td>

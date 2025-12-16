@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { FiUser, FiLock, FiMail, FiPhone, FiSave, FiKey } from 'react-icons/fi';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { User03Icon, LockIcon, Mail01Icon, SmartPhone01Icon, SystemUpdateIcon, Key02Icon, CirclePasswordIcon } from '@hugeicons/core-free-icons';
 
 export default function SettingsPage() {
   const { user, refreshUser } = useAuth();
@@ -124,7 +125,7 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <FiUser className="w-5 h-5" />
+              <HugeiconsIcon icon={User03Icon} size={20} strokeWidth={1.5} />
               Profile Information
             </CardTitle>
             <CardDescription>Update your account details</CardDescription>
@@ -134,7 +135,7 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name / Company Name</Label>
                 <div className="relative">
-                  <FiUser className="absolute left-3 top-3 text-zinc-400" />
+                  <HugeiconsIcon icon={User03Icon} size={16} strokeWidth={1.5} className="absolute left-3 top-3 text-zinc-400" />
                   <Input
                     id="name"
                     type="text"
@@ -150,7 +151,7 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <div className="relative">
-                  <FiMail className="absolute left-3 top-3 text-zinc-400" />
+                  <HugeiconsIcon icon={Mail01Icon} size={16} strokeWidth={1.5} className="absolute left-3 top-3 text-zinc-400" />
                   <Input
                     id="email"
                     type="email"
@@ -166,7 +167,7 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
                 <div className="relative">
-                  <FiPhone className="absolute left-3 top-3 text-zinc-400" />
+                  <HugeiconsIcon icon={SmartPhone01Icon} size={16} strokeWidth={1.5} className="absolute left-3 top-3 text-zinc-400" />
                   <Input
                     id="phone"
                     type="tel"
@@ -180,7 +181,7 @@ export default function SettingsPage() {
               </div>
 
               <Button type="submit" disabled={loading} className="w-full">
-                <FiSave className="mr-2" />
+                <HugeiconsIcon icon={SystemUpdateIcon} size={16} strokeWidth={1.5} className="mr-2" />
                 {loading ? 'Saving...' : 'Save Changes'}
               </Button>
             </form>
@@ -191,7 +192,7 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <FiLock className="w-5 h-5" />
+              <HugeiconsIcon icon={LockIcon} size={20} strokeWidth={1.5} />
               Change Password
             </CardTitle>
             <CardDescription>Update your password to keep your account secure</CardDescription>
@@ -201,7 +202,7 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label htmlFor="currentPassword">Current Password</Label>
                 <div className="relative">
-                  <FiLock className="absolute left-3 top-3 text-zinc-400" />
+                  <HugeiconsIcon icon={CirclePasswordIcon} size={16} strokeWidth={1.5} className="absolute left-3 top-3 text-zinc-400" />
                   <Input
                     id="currentPassword"
                     type="password"
@@ -217,7 +218,7 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>
                 <div className="relative">
-                  <FiKey className="absolute left-3 top-3 text-zinc-400" />
+                  <HugeiconsIcon icon={Key02Icon} size={16} strokeWidth={1.5} className="absolute left-3 top-3 text-zinc-400" />
                   <Input
                     id="newPassword"
                     type="password"
@@ -234,7 +235,7 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm New Password</Label>
                 <div className="relative">
-                  <FiKey className="absolute left-3 top-3 text-zinc-400" />
+                  <HugeiconsIcon icon={Key02Icon} size={16} strokeWidth={1.5} className="absolute left-3 top-3 text-zinc-400" />
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -248,7 +249,7 @@ export default function SettingsPage() {
               </div>
 
               <Button type="submit" disabled={loading} className="w-full">
-                <FiLock className="mr-2" />
+                <HugeiconsIcon icon={LockIcon} size={16} strokeWidth={1.5} className="mr-2" />
                 {loading ? 'Updating...' : 'Change Password'}
               </Button>
             </form>
@@ -292,7 +293,7 @@ export default function SettingsPage() {
       <Card className="mt-6 border-amber-200 bg-amber-50">
         <CardContent className="p-4">
           <div className="flex gap-3">
-            <FiLock className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <HugeiconsIcon icon={LockIcon} size={20} strokeWidth={1.5} className="text-amber-600 flex-shrink-0 mt-0.5" />
             <div>
               <h4 className="font-semibold text-amber-900 mb-1">Security Tips</h4>
               <ul className="text-sm text-amber-800 space-y-1">

@@ -12,17 +12,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  FiShield,
-  FiPhone,
-  FiUser,
-  FiCheckCircle,
-  FiAlertCircle,
-  FiClock,
-  FiSearch,
-  FiCopy,
-  FiBook,
-  FiCode,
-} from "react-icons/fi";
+  ShieldIcon,
+  SmartPhone01Icon,
+  User02Icon,
+  CheckmarkCircle01Icon,
+  AlertCircleIcon,
+  Clock01Icon,
+  Search01Icon,
+  Copy01Icon,
+  BookOpen01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useAuth } from "@/lib/auth";
 
 interface VerificationResult {
@@ -81,12 +81,12 @@ export default function KYCVerificationPage() {
         >
           {copiedId === id ? (
             <>
-              <FiCheckCircle className="w-3 h-3 mr-1" />
+              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} strokeWidth={1.5} className="mr-1" />
               Copied
             </>
           ) : (
             <>
-              <FiCopy className="w-3 h-3 mr-1" />
+              <HugeiconsIcon icon={Copy01Icon} size={12} strokeWidth={1.5} className="mr-1" />
               Copy
             </>
           )}
@@ -214,11 +214,11 @@ export default function KYCVerificationPage() {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-zinc-900 flex items-center gap-2">
-          <FiShield className="w-8 h-8 text-blue-600" />
+        <h1 className="text-2xl font-semibold text-zinc-900 flex items-center gap-2">
+          <HugeiconsIcon icon={ShieldIcon} size={24} strokeWidth={1.5} className="text-blue-600" />
           KYC Phone Verification
         </h1>
-        <p className="text-zinc-600 mt-2">
+        <p className="text-zinc-600 mt-2 text-sm">
           Verify phone numbers and resolve registered names. Each verification
           costs 1 credit.
         </p>
@@ -229,11 +229,11 @@ export default function KYCVerificationPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FiPhone className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 font-semibold">
+                <HugeiconsIcon icon={User02Icon} size={20} strokeWidth={1.5} />
                 Verify Phone Number
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Enter a Ghanaian phone number to resolve the registered name
               </CardDescription>
             </CardHeader>
@@ -270,7 +270,7 @@ export default function KYCVerificationPage() {
 
                 {error && (
                   <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-                    <FiAlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <HugeiconsIcon icon={AlertCircleIcon} size={20} strokeWidth={1.5} className="text-red-600 flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-red-900">Error</p>
                       <p className="text-sm text-red-700">{error}</p>
@@ -290,9 +290,9 @@ export default function KYCVerificationPage() {
                   >
                     <div className="flex items-start gap-2">
                       {result.status === "success" ? (
-                        <FiCheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} strokeWidth={1.5} className="text-green-600 flex-shrink-0 mt-0.5" />
                       ) : (
-                        <FiAlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                        <HugeiconsIcon icon={AlertCircleIcon} size={20} strokeWidth={1.5} className="text-yellow-600 flex-shrink-0 mt-0.5" />
                       )}
                       <div className="flex-1">
                         <p className="text-sm font-medium text-zinc-900 mb-2">
@@ -302,15 +302,15 @@ export default function KYCVerificationPage() {
                         </p>
                         <div className="space-y-1 text-sm">
                           <div className="flex items-center gap-2">
-                            <FiPhone className="w-4 h-4 text-zinc-500" />
+                            <HugeiconsIcon icon={SmartPhone01Icon} size={16} strokeWidth={1.5} className="text-zinc-500" />
                             <span className="text-zinc-700">
                               {result.phoneNumber}
                             </span>
                           </div>
                           {result.name && (
                             <div className="flex items-center gap-2">
-                              <FiUser className="w-4 h-4 text-zinc-500" />
-                              <span className="text-zinc-900 font-medium">
+                              <HugeiconsIcon icon={User02Icon} size={16} strokeWidth={1.5} className="text-zinc-500" />
+                              <span className="text-zinc-900">
                                 {result.name}
                               </span>
                             </div>
@@ -333,7 +333,7 @@ export default function KYCVerificationPage() {
                     </>
                   ) : (
                     <>
-                      <FiSearch className="w-4 h-4 mr-2" />
+                      <HugeiconsIcon icon={Search01Icon} size={16} strokeWidth={1.5} className="mr-2" />
                       Verify Phone Number
                     </>
                   )}
@@ -349,11 +349,11 @@ export default function KYCVerificationPage() {
           {/* Verification History */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FiClock className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 font-semibold">
+                <HugeiconsIcon icon={Clock01Icon} size={20} strokeWidth={1.5} />
                 Recent Verifications
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Your verification history (last 20 records)
               </CardDescription>
             </CardHeader>
@@ -364,7 +364,7 @@ export default function KYCVerificationPage() {
                 </div>
               ) : history.length === 0 ? (
                 <div className="text-center py-8 text-zinc-500">
-                  <FiClock className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <HugeiconsIcon icon={Clock01Icon} size={48} strokeWidth={1.5} className="mx-auto mb-3 opacity-30" />
                   <p className="text-sm">No verification history yet</p>
                   <p className="text-xs mt-1">
                     Verify a phone number to get started
@@ -383,7 +383,7 @@ export default function KYCVerificationPage() {
                             {item.phoneNumber}
                           </div>
                           {item.resolvedName ? (
-                            <div className="text-sm font-medium text-zinc-700 mb-1">
+                            <div className="text-sm text-zinc-700 mb-1">
                               {item.resolvedName}
                             </div>
                           ) : (
@@ -418,7 +418,7 @@ export default function KYCVerificationPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <FiBook className="w-5 h-5" />
+                <HugeiconsIcon icon={BookOpen01Icon} size={20} strokeWidth={1.5} />
                 API Documentation
               </CardTitle>
               <CardDescription>
@@ -464,7 +464,7 @@ export default function KYCVerificationPage() {
               </div>
 
               <div className="border-t pt-6">
-                <h3 className="text-sm font-semibold mb-3">
+                <h3 className="text-sm font-medium mb-3">
                   Phone Number Format
                 </h3>
                 <div className="space-y-2 text-sm">
@@ -487,7 +487,7 @@ export default function KYCVerificationPage() {
               </div>
 
               <div className="border-t pt-6">
-                <h3 className="text-sm font-semibold mb-3">Status Codes</h3>
+                <h3 className="text-sm font-medium mb-3">Status Codes</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-start gap-2">
                     <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
@@ -498,7 +498,7 @@ export default function KYCVerificationPage() {
                     </span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">
+                    <span className="px-2 py-0.5 rounded text-xs font-normal bg-yellow-100 text-yellow-700">
                       not_found
                     </span>
                     <span className="text-zinc-600">
@@ -518,7 +518,7 @@ export default function KYCVerificationPage() {
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-900 flex items-start gap-2">
-                  <FiAlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <HugeiconsIcon icon={AlertCircleIcon} size={16} strokeWidth={1.5} className="flex-shrink-0 mt-0.5" />
                   <span>
                     <strong>Note:</strong> Each verification deducts 1 credit
                     regardless of whether a name is found. Requires only API key
@@ -528,14 +528,14 @@ export default function KYCVerificationPage() {
               </div>
 
               <div className="border-t pt-6">
-                <h3 className="text-sm font-semibold mb-3">Error Codes</h3>
+                <h3 className="text-sm font-medium mb-3">Error Codes</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-start gap-3">
                     <code className="text-xs font-mono bg-zinc-100 px-1.5 py-0.5 rounded">
                       401
                     </code>
                     <div>
-                      <p className="font-medium text-zinc-900">
+                      <p className="text-zinc-900">
                         Invalid API Key
                       </p>
                       <p className="text-zinc-600">
@@ -548,7 +548,7 @@ export default function KYCVerificationPage() {
                       402
                     </code>
                     <div>
-                      <p className="font-medium text-zinc-900">
+                      <p className="text-zinc-900">
                         Insufficient Balance
                       </p>
                       <p className="text-zinc-600">
@@ -561,7 +561,7 @@ export default function KYCVerificationPage() {
                       400
                     </code>
                     <div>
-                      <p className="font-medium text-zinc-900">
+                      <p className="text-zinc-900">
                         Invalid Phone Format
                       </p>
                       <p className="text-zinc-600">
@@ -582,10 +582,10 @@ export default function KYCVerificationPage() {
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                <FiShield className="w-5 h-5 text-blue-600" />
+                <HugeiconsIcon icon={ShieldIcon} size={20} strokeWidth={1.5} className="text-blue-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-blue-900 mb-1">
+                <h3 className="font-medium text-blue-900 mb-1">
                   Secure Verification
                 </h3>
                 <p className="text-sm text-blue-700">
@@ -601,10 +601,10 @@ export default function KYCVerificationPage() {
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-                <FiPhone className="w-5 h-5 text-green-600" />
+                <HugeiconsIcon icon={SmartPhone01Icon} size={20} strokeWidth={1.5} className="text-green-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-green-900 mb-1">
+                <h3 className="font-medium text-green-900 mb-1">
                   Ghana Numbers
                 </h3>
                 <p className="text-sm text-green-700">
@@ -620,10 +620,10 @@ export default function KYCVerificationPage() {
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
-                <FiUser className="w-5 h-5 text-purple-600" />
+                <HugeiconsIcon icon={User02Icon} size={20} strokeWidth={1.5} className="text-purple-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-purple-900 mb-1">
+                <h3 className="font-medium text-purple-900 mb-1">
                   Name Resolution
                 </h3>
                 <p className="text-sm text-purple-700">
