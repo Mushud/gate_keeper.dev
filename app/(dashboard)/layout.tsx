@@ -102,14 +102,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       <aside
         className={`
           fixed lg:sticky top-0 left-0 h-screen
-          w-64 bg-green-700 border-r border-white border-opacity-20 flex flex-col shadow-xl
+          w-64 bg-black border-r border-zinc-700 flex flex-col shadow-2xl
           z-50 lg:z-auto
           transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
         {/* Logo - Desktop Only */}
-        <div className="hidden lg:block p-6 border-b border-white border-opacity-30">
+        <div className="hidden lg:block p-6 border-b border-zinc-800">
           <Link href="/dashboard" className="flex items-center gap-3">
             <img 
               src="/logo.png" 
@@ -118,7 +118,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             />
             <div>
               <div className="font-bold text-lg text-white">GateKeeperPro</div>
-              <div className="text-xs text-green-100">Developer Portal</div>
+              <div className="text-xs text-zinc-400">Developer Portal</div>
             </div>
           </Link>
         </div>
@@ -137,8 +137,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
                   isActive
-                    ? 'bg-white bg-opacity-20 text-white border border-white border-opacity-40 shadow-md'
-                    : 'text-green-100 hover:bg-white hover:bg-opacity-10 hover:border border-white border-opacity-0 hover:border-opacity-20'
+                    ? 'bg-zinc-800 text-white border border-zinc-600 shadow-md'
+                    : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 hover:border border-zinc-800'
                 }`}
               >
                 {renderIcon(item.icon)}
@@ -149,14 +149,26 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* User section */}
-        <div className="p-4 border-t border-white border-opacity-30">
-          <div className="flex items-center gap-3 px-4 py-2 mb-3 bg-white bg-opacity-10 rounded-lg border border-white border-opacity-20">
-            <div className="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-white text-sm font-semibold border border-white border-opacity-30">
+        <div className="p-4 border-t border-zinc-800">
+          {/* Account Balance */}
+          <div className="mb-3 px-4 py-3 bg-zinc-900 rounded-lg border border-zinc-700">
+            <div className="text-xs text-zinc-400 mb-1">Account Balance</div>
+            <div className="flex items-baseline gap-2">
+              <div className="text-2xl font-bold text-white">{user.balance || 0}</div>
+              <div className="text-sm text-zinc-400">Credits</div>
+            </div>
+            {user.balance && user.balance < 50 && (
+              <div className="text-xs text-yellow-400 mt-1">⚠️ Low balance</div>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-3 px-4 py-2 mb-3 bg-zinc-900 rounded-lg border border-zinc-700">
+            <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-white text-sm font-semibold border border-zinc-600">
               {user.name.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-white truncate">{user.name}</div>
-              <div className="text-xs text-green-100 truncate">{user.email}</div>
+              <div className="text-xs text-zinc-400 truncate">{user.email}</div>
             </div>
           </div>
           <button
@@ -164,7 +176,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               logout();
               setSidebarOpen(false);
             }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-red-500 hover:bg-opacity-80 transition-all border border-white border-opacity-20 hover:border-white hover:border-opacity-40"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-zinc-400 hover:bg-red-600 hover:text-white transition-all border border-zinc-800 hover:border-red-600"
           >
             <HugeiconsIcon icon={Cancel01Icon} size={20} strokeWidth={1.5} />
             Sign out

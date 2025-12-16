@@ -26,6 +26,8 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.26",
+    "highcharts": "^12.4.0",
+    "highcharts-react-official": "^3.2.3",
     "lucide-react": "^0.469.0",
     "next": "15.0.3",
     "react": "^18.3.1",
