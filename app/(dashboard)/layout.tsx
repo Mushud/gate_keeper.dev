@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -27,11 +27,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     console.log('Dashboard layout - loading:', loading, 'user:', user ? 'exists' : 'null');
     if (!loading && !user) {
       console.log('No user found, redirecting to login');
-      // Small delay to ensure auth check has completed
-      const timer = setTimeout(() => {
-        router.push('/login');
-      }, 100);
-      return () => clearTimeout(timer);
+      router.push('/login');
     }
   }, [user, loading, router]);
 
@@ -188,6 +184,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                           <Link
                             key={subItem.name}
                             href={subItem.href}
+                            prefetch={true}
                             onClick={() => setSidebarOpen(false)}
                             className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
                               isActive
@@ -211,6 +208,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.name}
                 href={item.href}
+                prefetch={true}
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
                   isActive
@@ -264,7 +262,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <main className="flex-1 overflow-y-auto pt-20 lg:pt-0">
         <div className="p-4 lg:p-0">
-          {children}
+          <Suspense fallback={
+            <div className="p-8">
+              <div className="animate-pulse space-y-4">
+                <div className="h-8 bg-zinc-200 rounded w-1/4"></div>
+                <div className="h-4 bg-zinc-200 rounded w-1/2"></div>
+              </div>
+            </div>
+          }>
+            {children}
+          </Suspense>
         </div>
       </main>
     </div>

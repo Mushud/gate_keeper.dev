@@ -260,6 +260,46 @@ console.log('OTP Reference:', data.reference);
         </CardContent>
       </Card>
 
+      {/* USSD Shortcode */}
+      <Card className="mb-6 border-purple-200 bg-purple-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <HugeiconsIcon
+              icon={ShieldIcon}
+              size={20}
+              strokeWidth={1.5}
+              className="text-purple-600"
+            />
+            USSD Shortcode for OTP Retrieval
+          </CardTitle>
+          <CardDescription className="text-purple-900">
+            Users can retrieve their OTP via USSD
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-purple-900">
+            Users who request OTPs can dial the following USSD code to retrieve their OTP:
+          </p>
+          <div className="bg-purple-100 p-4 rounded-lg border border-purple-300">
+            <code className="text-2xl font-bold text-purple-900">*713*882#</code>
+          </div>
+          <div className="space-y-2 text-sm text-purple-900">
+            <p className="font-semibold">How it works:</p>
+            <ol className="list-decimal list-inside space-y-1 ml-2">
+              <li>User dials <code className="bg-purple-100 px-1 py-0.5 rounded">*713*882#</code> on their phone</li>
+              <li>System identifies the user by their phone number</li>
+              <li>Most recent active OTP is displayed on screen</li>
+              <li>User can enter the OTP in your application</li>
+            </ol>
+          </div>
+          <div className="mt-3 p-3 bg-purple-100 rounded-lg border border-purple-300">
+            <p className="text-xs text-purple-900">
+              <strong>Note:</strong> This feature is particularly useful for users who may not receive SMS messages due to network issues or for those who prefer not to wait for SMS delivery.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Verify OTP Endpoint */}
       <Card className="mb-6">
         <CardHeader>
@@ -492,6 +532,23 @@ if (data.verified) {
                 <p className="text-sm text-zinc-600">
                   The API automatically resolves user names from phone numbers
                   when available, making signup flows smoother.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <HugeiconsIcon
+                icon={CheckmarkCircle01Icon}
+                size={20}
+                strokeWidth={1.5}
+                className="text-green-600 flex-shrink-0 mt-0.5"
+              />
+              <div>
+                <h4 className="font-semibold text-sm mb-1">
+                  USSD Alternative
+                </h4>
+                <p className="text-sm text-zinc-600">
+                  Inform users they can retrieve their OTP by dialing <code className="bg-zinc-100 px-1 py-0.5 rounded">*713*882#</code> if they don't receive the SMS or prefer an alternative method.
                 </p>
               </div>
             </div>

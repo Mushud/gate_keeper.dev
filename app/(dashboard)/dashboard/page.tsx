@@ -3,8 +3,7 @@
 import { useState, useEffect, useId } from "react";
 import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
-import Highcharts from "highcharts";
-import HighchartsReact from "highcharts-react-official";
+import Chart from "@/components/Chart";
 import {
   Card,
   CardContent,
@@ -478,8 +477,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <HighchartsReact
-                    highcharts={Highcharts}
+                  <Chart
                     options={{
                       chart: {
                         type: "spline",
@@ -622,8 +620,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    <HighchartsReact
-                      highcharts={Highcharts}
+                    <Chart
                       options={{
                         chart: {
                           type: analytics?.dailyStats?.kycByType ? "spline" : "areaspline",

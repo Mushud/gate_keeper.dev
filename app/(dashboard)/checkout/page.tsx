@@ -21,9 +21,15 @@ interface Project {
 interface CheckoutSession {
   sessionToken: string;
   projectName: string;
+  projectId?: string;
   checkoutUrl: string;
   status: string;
+  phoneNumber?: string;
+  email?: string;
   successUrl: string;
+  statusCallback?: string;
+  metadata?: any;
+  verifiedAt?: string;
   expiresAt: string;
   createdAt: string;
   checkoutType?: 'standard' | 'direct';
@@ -37,7 +43,6 @@ export default function CheckoutPage() {
   const [sessions, setSessions] = useState<CheckoutSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState<CheckoutSession | null>(null);
   const [checkoutType, setCheckoutType] = useState<'standard' | 'direct'>('standard');
@@ -73,11 +78,13 @@ export default function CheckoutPage() {
   const fetchSessions = async () => {
     try {
       setLoading(true);
-      // Note: You'll need to add this endpoint to your backend
-      // For now, we'll just clear the sessions
-      setSessions([]);
+      const response = await api.get('/api/checkout/sessions');
+      console.log('Checkout sessions response:', response.data);
+      const sessionsData = response.data.sessions || [];
+      setSessions(sessionsData);
     } catch (err: any) {
       console.error('Failed to fetch sessions:', err);
+      setError('Failed to load checkout sessions');
     } finally {
       setLoading(false);
     }
@@ -159,10 +166,10 @@ export default function CheckoutPage() {
         setSuccess('Checkout session created! User will enter phone/email on checkout page.');
       }
       setFormData({ project: '', apiKey: '', phoneNumber: '', email: '', successUrl: '', statusCallback: '', metadata: '{}' });
+      setCheckoutType('standard');
 
       setTimeout(() => {
         setSuccess('');
-        setShowCreateModal(false);
         setShowCodeModal(true);
       }, 1500);
     } catch (err: any) {
@@ -179,12 +186,8 @@ export default function CheckoutPage() {
   };
 
   const closeModal = () => {
-    setShowCreateModal(false);
     setShowCodeModal(false);
     setSelectedSession(null);
-    setCheckoutType('standard');
-    setFormData({ project: '', apiKey: '', phoneNumber: '', email: '', successUrl: '', statusCallback: '', metadata: '{}' });
-    setError('');
   };
 
   const getIntegrationCode = (session: CheckoutSession) => {
@@ -202,23 +205,89 @@ export default function CheckoutPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-zinc-900"></div>
+      <div className="p-8">
+        <div className="mb-8">
+          <div className="h-9 w-64 bg-zinc-200 rounded animate-pulse"></div>
+          <div className="h-4 w-96 bg-zinc-200 rounded animate-pulse mt-2"></div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Left Column Skeleton */}
+          <div className="space-y-6">
+            <div className="border rounded-lg p-6 space-y-4">
+              <div className="h-6 w-48 bg-zinc-200 rounded animate-pulse"></div>
+              <div className="h-4 w-full bg-zinc-200 rounded animate-pulse"></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="h-24 bg-zinc-200 rounded animate-pulse"></div>
+                <div className="h-24 bg-zinc-200 rounded animate-pulse"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-24 bg-zinc-200 rounded animate-pulse"></div>
+                <div className="h-10 bg-zinc-200 rounded animate-pulse"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-32 bg-zinc-200 rounded animate-pulse"></div>
+                <div className="h-10 bg-zinc-200 rounded animate-pulse"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-28 bg-zinc-200 rounded animate-pulse"></div>
+                <div className="h-10 bg-zinc-200 rounded animate-pulse"></div>
+              </div>
+              <div className="h-10 w-full bg-zinc-200 rounded animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* Right Column Skeleton */}
+          <div className="space-y-6">
+            <div className="border rounded-lg p-6 space-y-4 bg-blue-50/50">
+              <div className="h-6 w-48 bg-zinc-200 rounded animate-pulse"></div>
+              <div className="h-4 w-full bg-zinc-200 rounded animate-pulse"></div>
+              <div className="space-y-2">
+                <div className="h-4 w-20 bg-zinc-200 rounded animate-pulse"></div>
+                <div className="h-20 bg-zinc-900/10 rounded animate-pulse"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-16 bg-zinc-200 rounded animate-pulse"></div>
+                <div className="h-16 bg-zinc-900/10 rounded animate-pulse"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-28 bg-zinc-200 rounded animate-pulse"></div>
+                <div className="h-32 bg-zinc-900/10 rounded animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sessions List Skeleton */}
+        <div className="space-y-4">
+          <div className="h-7 w-40 bg-zinc-200 rounded animate-pulse"></div>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="border rounded-lg p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1 space-y-2">
+                    <div className="h-5 w-48 bg-zinc-200 rounded animate-pulse"></div>
+                    <div className="h-4 w-32 bg-zinc-200 rounded animate-pulse"></div>
+                  </div>
+                  <div className="h-6 w-20 bg-zinc-200 rounded-full animate-pulse"></div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="h-16 bg-zinc-100 rounded animate-pulse"></div>
+                  <div className="h-16 bg-zinc-100 rounded animate-pulse"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-zinc-900">Checkout Sessions</h1>
-          <p className="text-zinc-600 mt-1">Create OTP verification checkout flows</p>
-        </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.5} className="mr-2" />
-          Create Session
-        </Button>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-zinc-900">Checkout Sessions</h1>
+        <p className="text-zinc-600 mt-1">Create OTP verification checkout flows</p>
       </div>
 
       {(error || success) && (
@@ -240,50 +309,217 @@ export default function CheckoutPage() {
         </Card>
       )}
 
-      {/* Developer API Documentation */}
-      <Card className="mb-6 border-blue-200 bg-blue-50/50">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <HugeiconsIcon icon={CodeIcon} size={20} strokeWidth={1.5} className="text-blue-600" />
-            <CardTitle className="text-lg">Developer API - Create Checkout URL</CardTitle>
-          </div>
-          <CardDescription>
-            Programmatically create checkout sessions from your backend
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label className="text-sm font-semibold text-zinc-700">Endpoint</Label>
-            <div className="flex items-center gap-2 mt-1">
-              <code className="flex-1 bg-zinc-900 text-green-400 px-3 py-2 rounded text-sm">
-                POST {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/checkout/create
-              </code>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => copyToClipboard(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/checkout/create`)}
-              >
-                <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
-              </Button>
-            </div>
+      {/* Two Column Layout */}
+      {projects.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Left Column - Create Checkout */}
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Create Checkout Session</CardTitle>
+                <CardDescription>
+                  Generate a unique checkout URL for OTP verification
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Checkout Type Selector */}
+                <div className="space-y-3">
+                  <Label>Checkout Type *</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setCheckoutType('standard')}
+                      className={`p-4 rounded-lg border-2 text-left transition-all ${
+                        checkoutType === 'standard'
+                          ? 'border-blue-600 bg-blue-50'
+                          : 'border-zinc-200 hover:border-zinc-300'
+                      }`}
+                    >
+                      <div className="font-semibold text-sm mb-1">Standard Checkout</div>
+                      <div className="text-xs text-zinc-600">
+                        User enters phone/email on checkout page
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCheckoutType('direct')}
+                      className={`p-4 rounded-lg border-2 text-left transition-all ${
+                        checkoutType === 'direct'
+                          ? 'border-blue-600 bg-blue-50'
+                          : 'border-zinc-200 hover:border-zinc-300'
+                      }`}
+                    >
+                      <div className="font-semibold text-sm mb-1">Direct Checkout</div>
+                      <div className="text-xs text-zinc-600">
+                        Provide phone/email now, OTP sent immediately
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="project">Project *</Label>
+                  <select
+                    id="project"
+                    className="w-full px-3 py-2 border rounded-md"
+                    value={formData.project}
+                    onChange={(e) => setFormData({ ...formData, project: e.target.value })}
+                  >
+                    <option value="">Select a project</option>
+                    {projects.filter(p => p.status === 'active').map((project) => (
+                      <option key={project._id} value={project._id}>
+                        {project.name} ({project.senderID})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="apiKey">Project API Key *</Label>
+                  <Input
+                    id="apiKey"
+                    type="password"
+                    placeholder="Enter your project API key"
+                    value={formData.apiKey}
+                    onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
+                  />
+                  <p className="text-xs text-zinc-600">
+                    The API key you received when creating the project
+                  </p>
+                </div>
+
+                {/* Show phone/email fields only for direct checkout */}
+                {checkoutType === 'direct' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="phoneNumber">Phone Number</Label>
+                        <Input
+                          id="phoneNumber"
+                          type="tel"
+                          placeholder="+233241234567"
+                          value={formData.phoneNumber}
+                          onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email Address</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="user@example.com"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-zinc-600">
+                      At least one (phone or email) is required for direct checkout
+                    </p>
+                  </>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="successUrl">Success URL *</Label>
+                  <Input
+                    id="successUrl"
+                    type="url"
+                    placeholder="https://yourapp.com/success"
+                    value={formData.successUrl}
+                    onChange={(e) => setFormData({ ...formData, successUrl: e.target.value })}
+                  />
+                  <p className="text-xs text-zinc-600">
+                    User will be redirected here after successful verification
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="statusCallback">Status Callback URL (Optional)</Label>
+                  <Input
+                    id="statusCallback"
+                    type="url"
+                    placeholder="https://yourapp.com/webhook"
+                    value={formData.statusCallback}
+                    onChange={(e) => setFormData({ ...formData, statusCallback: e.target.value })}
+                  />
+                  <p className="text-xs text-zinc-600">
+                    Receive webhook notifications for all status changes
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="metadata">Metadata (Optional JSON)</Label>
+                  <Textarea
+                    id="metadata"
+                    placeholder='{"orderId": "12345", "customerId": "abc"}'
+                    value={formData.metadata}
+                    onChange={(e) => setFormData({ ...formData, metadata: e.target.value })}
+                    rows={3}
+                  />
+                  <p className="text-xs text-zinc-600">
+                    Custom data to pass back in callbacks
+                  </p>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button 
+                    onClick={handleCreateSession} 
+                    disabled={creating}
+                    className="flex-1"
+                  >
+                    {creating ? 'Creating...' : 'Create Checkout Session'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <div>
-            <Label className="text-sm font-semibold text-zinc-700">Headers</Label>
-            <pre className="bg-zinc-900 text-zinc-100 p-3 rounded text-xs mt-1 overflow-x-auto">
+          {/* Right Column - Documentation */}
+          <div className="space-y-6">
+            <Card className="border-blue-200 bg-blue-50/50">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <HugeiconsIcon icon={CodeIcon} size={20} strokeWidth={1.5} className="text-blue-600" />
+                  <CardTitle className="text-lg">API Documentation</CardTitle>
+                </div>
+                <CardDescription>
+                  Create checkout sessions programmatically
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label className="text-sm font-semibold text-zinc-700">Endpoint</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <code className="flex-1 bg-zinc-900 text-green-400 px-3 py-2 rounded text-sm">
+                      POST {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/checkout/create
+                    </code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => copyToClipboard(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/checkout/create`)}
+                    >
+                      <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-semibold text-zinc-700">Headers</Label>
+                  <pre className="bg-zinc-900 text-zinc-100 p-3 rounded text-xs mt-1">
 {`X-API-Key: your-project-api-key
 Content-Type: application/json`}
-            </pre>
-          </div>
+                  </pre>
+                </div>
 
-          <div>
-            <Label className="text-sm font-semibold text-zinc-700">Request Body</Label>
-            <div className="flex items-start gap-2 mt-1">
-              <pre className="flex-1 bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto">
+                <div>
+                  <Label className="text-sm font-semibold text-zinc-700">Request Body</Label>
+                  <div className="flex items-start gap-2 mt-1">
+                    <pre className="flex-1 bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto">
 {`{
   "project": "project-id-here",
-  "phoneNumber": "+233241234567", // Optional
-  "email": "user@example.com",     // Optional
+  "phoneNumber": "+233241234567",
+  "email": "user@example.com",
   "successUrl": "https://yourapp.com/success",
   "statusCallback": "https://yourapp.com/webhook",
   "metadata": {
@@ -291,11 +527,11 @@ Content-Type: application/json`}
     "customerId": "abc"
   }
 }`}
-              </pre>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => copyToClipboard(`{
+                    </pre>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => copyToClipboard(`{
   "project": "project-id-here",
   "phoneNumber": "+233241234567",
   "email": "user@example.com",
@@ -306,31 +542,31 @@ Content-Type: application/json`}
     "customerId": "abc"
   }
 }`)}
-              >
-                <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
-              </Button>
-            </div>
-          </div>
+                    >
+                      <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
+                    </Button>
+                  </div>
+                </div>
 
-          <div>
-            <Label className="text-sm font-semibold text-zinc-700">Response</Label>
-            <pre className="bg-zinc-900 text-zinc-100 p-3 rounded text-xs mt-1 overflow-x-auto">
+                <div>
+                  <Label className="text-sm font-semibold text-zinc-700">Response</Label>
+                  <pre className="bg-zinc-900 text-zinc-100 p-3 rounded text-xs mt-1 overflow-x-auto">
 {`{
   "message": "Checkout session created successfully",
   "sessionToken": "uuid-session-token",
   "checkoutUrl": "https://checkout.yourapp.com/checkout/uuid",
   "expiresAt": "2025-12-13T12:00:00.000Z",
-  "checkoutType": "direct", // "direct" or "standard"
+  "checkoutType": "direct",
   "otpSent": true,
   "receiver": "+233241234567"
 }`}
-            </pre>
-          </div>
+                  </pre>
+                </div>
 
-          <div>
-            <Label className="text-sm font-semibold text-zinc-700">Code Example (cURL) - Standard Checkout</Label>
-            <div className="flex items-start gap-2 mt-1">
-              <pre className="flex-1 bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto">
+                <div>
+                  <Label className="text-sm font-semibold text-zinc-700">cURL Example</Label>
+                  <div className="flex items-start gap-2 mt-1">
+                    <pre className="flex-1 bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto">
 {`curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/checkout/create \\
   -H "X-API-Key: your-project-api-key" \\
   -H "Content-Type: application/json" \\
@@ -338,87 +574,43 @@ Content-Type: application/json`}
     "project": "project-id",
     "successUrl": "https://yourapp.com/success"
   }'`}
-              </pre>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => copyToClipboard(`curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/checkout/create \\
+                    </pre>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => copyToClipboard(`curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/checkout/create \\
   -H "X-API-Key: your-project-api-key" \\
   -H "Content-Type: application/json" \\
   -d '{
     "project": "project-id",
     "successUrl": "https://yourapp.com/success"
   }'`)}
-              >
-                <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
-              </Button>
-            </div>
+                    >
+                      <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <p className="text-xs text-amber-800">
+                    <strong>⚠️ Security Note:</strong> Never expose your API key in client-side code. Always create checkout sessions from your backend.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
+        </div>
+      )}
 
-          <div>
-            <Label className="text-sm font-semibold text-zinc-700">Code Example (JavaScript) - Direct Checkout</Label>
-            <div className="flex items-start gap-2 mt-1">
-              <pre className="flex-1 bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto">
-{`// Direct checkout - OTP sent immediately
-const response = await fetch('${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/checkout/create', {
-  method: 'POST',
-  headers: {
-    'X-API-Key': 'your-project-api-key',
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    project: 'project-id',
-    phoneNumber: '+233241234567', // Include for direct checkout
-    successUrl: 'https://yourapp.com/success',
-    metadata: { orderId: '12345' }
-  })
-});
-
-const data = await response.json();
-if (data.otpSent) {
-  console.log('OTP sent to', data.receiver);
-}
-console.log(data.checkoutUrl); // Send URL for verification`}
-              </pre>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => copyToClipboard(`const response = await fetch('${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/checkout/create', {
-  method: 'POST',
-  headers: {
-    'X-API-Key': 'your-project-api-key',
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    project: 'project-id',
-    successUrl: 'https://yourapp.com/success',
-    statusCallback: 'https://yourapp.com/webhook',
-    metadata: { orderId: '12345' }
-  })
-});
-
-const data = await response.json();
-console.log(data.checkoutUrl);`)}
-              >
-                <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
-              </Button>
-            </div>
-          </div>
-
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-            <p className="text-xs text-amber-800">
-              <strong>⚠️ Security Note:</strong> Never expose your project API key in client-side code. Always create checkout sessions from your backend server.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 gap-6">
-        {sessions.map((session) => (
-          <Card key={session.sessionToken}>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
+      {/* Sessions List */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold text-zinc-900">Recent Sessions</h2>
+        <div className="grid grid-cols-1 gap-6">
+          {sessions.map((session) => (
+            <Card key={session.sessionToken}>
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
                   <CardTitle className="text-lg">{session.projectName}</CardTitle>
                   <CardDescription className="mt-1">
                     Session: {session.sessionToken.substring(0, 8)}...
@@ -520,205 +712,12 @@ console.log(data.checkoutUrl);`)}
           <Card>
             <CardContent className="p-12 text-center">
               <p className="text-zinc-600 mb-4">No checkout sessions yet</p>
-              <Button onClick={() => setShowCreateModal(true)}>
-                <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.5} className="mr-2" />
-                Create Your First Session
-              </Button>
+              <p className="text-sm text-zinc-500">Create your first session using the form above</p>
             </CardContent>
           </Card>
         )}
-      </div>
-
-      {/* Create Session Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <CardTitle>Create Checkout Session</CardTitle>
-              <CardDescription>
-                Generate a unique checkout URL for OTP verification
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Checkout Type Selector */}
-              <div className="space-y-3">
-                <Label>Checkout Type *</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setCheckoutType('standard')}
-                    className={`p-4 rounded-lg border-2 text-left transition-all ${
-                      checkoutType === 'standard'
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-zinc-200 hover:border-zinc-300'
-                    }`}
-                  >
-                    <div className="font-semibold text-sm mb-1">Standard Checkout</div>
-                    <div className="text-xs text-zinc-600">
-                      User enters phone/email on checkout page
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCheckoutType('direct')}
-                    className={`p-4 rounded-lg border-2 text-left transition-all ${
-                      checkoutType === 'direct'
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-zinc-200 hover:border-zinc-300'
-                    }`}
-                  >
-                    <div className="font-semibold text-sm mb-1">Direct Checkout</div>
-                    <div className="text-xs text-zinc-600">
-                      Provide phone/email now, OTP sent immediately
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="project">Project *</Label>
-                <select
-                  id="project"
-                  className="w-full px-3 py-2 border rounded-md"
-                  value={formData.project}
-                  onChange={(e) => setFormData({ ...formData, project: e.target.value })}
-                >
-                  <option value="">Select a project</option>
-                  {projects.filter(p => p.status === 'active').map((project) => (
-                    <option key={project._id} value={project._id}>
-                      {project.name} ({project.senderID})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="apiKey">Project API Key *</Label>
-                <Input
-                  id="apiKey"
-                  type="password"
-                  placeholder="Enter your project API key"
-                  value={formData.apiKey}
-                  onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
-                />
-                <p className="text-xs text-zinc-600">
-                  The API key you received when creating the project
-                </p>
-              </div>
-
-              {/* Show phone/email fields only for direct checkout */}
-              {checkoutType === 'direct' && (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="phoneNumber">Phone Number</Label>
-                      <Input
-                        id="phoneNumber"
-                        type="tel"
-                        placeholder="+233241234567"
-                        value={formData.phoneNumber}
-                        onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                      />
-                      <p className="text-xs text-zinc-600">
-                        Will receive OTP via SMS
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="user@example.com"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      />
-                      <p className="text-xs text-zinc-600">
-                        Will receive OTP via email
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    <p className="text-xs text-amber-800">
-                      <strong>⚠️ Direct Checkout:</strong> Provide at least one contact method. OTP will be sent immediately when checkout is created.
-                    </p>
-                  </div>
-                </>
-              )}
-
-              {checkoutType === 'standard' && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-xs text-blue-800">
-                    <strong>📋 Standard Checkout:</strong> The user will enter their phone number or email on the checkout page before receiving the OTP.
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="successUrl">Success URL *</Label>
-                <Input
-                  id="successUrl"
-                  placeholder="https://yourapp.com/success"
-                  value={formData.successUrl}
-                  onChange={(e) => setFormData({ ...formData, successUrl: e.target.value })}
-                />
-                <p className="text-xs text-zinc-600">
-                  Where to redirect users after successful verification
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="statusCallback">Status Callback URL (Optional)</Label>
-                <Input
-                  id="statusCallback"
-                  placeholder="https://yourapp.com/webhook"
-                  value={formData.statusCallback}
-                  onChange={(e) => setFormData({ ...formData, statusCallback: e.target.value })}
-                />
-                <p className="text-xs text-zinc-600">
-                  Receive webhook notifications about session status changes
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="metadata">Metadata (Optional JSON)</Label>
-                <Textarea
-                  id="metadata"
-                  placeholder='{"orderId": "12345", "customerId": "abc"}'
-                  value={formData.metadata}
-                  onChange={(e) => setFormData({ ...formData, metadata: e.target.value })}
-                  rows={3}
-                />
-                <p className="text-xs text-zinc-600">
-                  Custom data to attach to this session (must be valid JSON)
-                </p>
-              </div>
-
-              {error && (
-                <div className="p-3 bg-red-50 text-red-800 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
-
-              {success && (
-                <div className="p-3 bg-green-50 text-green-800 rounded-lg text-sm">
-                  {success}
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-4">
-                <Button variant="outline" onClick={closeModal} className="flex-1" disabled={creating}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateSession} className="flex-1" disabled={creating}>
-                  {creating ? 'Creating...' : 'Create Session'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
-      )}
+      </div>
 
       {/* Integration Code Modal */}
       {showCodeModal && selectedSession && (
