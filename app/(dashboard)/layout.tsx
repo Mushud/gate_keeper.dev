@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AuthProvider, useAuth } from '@/lib/auth';
-import { Home01Icon, Folder01Icon, ShieldIcon, ShoppingCart01Icon, File01Icon, BookOpen01Icon, CreditCardIcon, Settings02Icon, Menu01Icon, Cancel01Icon, Logout01Icon } from '@hugeicons/core-free-icons';
+import { Home01Icon, Folder01Icon, ShieldIcon, ShoppingCart01Icon, File01Icon, BookOpen01Icon, CreditCardIcon, Settings02Icon, Menu01Icon, Cancel01Icon, Logout01Icon, Message01Icon, MailSend01Icon, ArrowDown01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
@@ -13,6 +13,15 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(['messaging', 'authentication']);
+
+  const toggleGroup = (groupName: string) => {
+    setExpandedGroups(prev => 
+      prev.includes(groupName) 
+        ? prev.filter(g => g !== groupName)
+        : [...prev, groupName]
+    );
+  };
 
   useEffect(() => {
     console.log('Dashboard layout - loading:', loading, 'user:', user ? 'exists' : 'null');
@@ -41,11 +50,27 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: 'home' },
     { name: 'Projects', href: '/projects', icon: 'folder' },
+    { 
+      name: 'Messaging', 
+      icon: 'message', 
+      group: true,
+      items: [
+        { name: 'Send SMS', href: '/sms', icon: 'message' },
+        { name: 'Campaigns', href: '/campaigns', icon: 'mail-send' },
+      ]
+    },
+    { 
+      name: 'Authentication', 
+      icon: 'shield', 
+      group: true,
+      items: [
+        { name: 'One Time Passwords', href: '/developer', icon: 'book-open' },
+        { name: 'OTP Checkout', href: '/checkout', icon: 'shopping-cart' },
+      ]
+    },
     { name: 'KYC Verification', href: '/kyc', icon: 'shield' },
-    { name: 'Checkout', href: '/checkout', icon: 'shopping-cart' },
     // { name: 'Analytics', href: '/analytics', icon: 'bar-chart' },
     { name: 'Logs', href: '/logs', icon: 'file-text' },
-    { name: 'Developer', href: '/developer', icon: 'book-open' },
     { name: 'Billing', href: '/billing', icon: 'credit-card' },
     { name: 'Transactions', href: '/transactions', icon: 'credit-card' },
     { name: 'Settings', href: '/settings', icon: 'settings' },
@@ -56,6 +81,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     const strokeWidth = 1.5;
     
     switch(iconName) {
+      case 'message': return <HugeiconsIcon icon={Message01Icon} size={size} strokeWidth={strokeWidth} />;
+      case 'mail-send': return <HugeiconsIcon icon={MailSend01Icon} size={size} strokeWidth={strokeWidth} />;
       case 'home': return <HugeiconsIcon icon={Home01Icon} size={size} strokeWidth={strokeWidth} />;
       case 'folder': return <HugeiconsIcon icon={Folder01Icon} size={size} strokeWidth={strokeWidth} />;
       case 'shield': return <HugeiconsIcon icon={ShieldIcon} size={size} strokeWidth={strokeWidth} />;
@@ -128,7 +155,57 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          {navigation.map((item) => {
+          {navigation.map((item: any) => {
+            if (item.group) {
+              const isExpanded = expandedGroups.includes(item.name.toLowerCase());
+              const isGroupActive = item.items?.some((subItem: any) => pathname === subItem.href);
+              
+              return (
+                <div key={item.name}>
+                  <button
+                    onClick={() => toggleGroup(item.name.toLowerCase())}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                      isGroupActive
+                        ? 'bg-zinc-800 text-white border border-zinc-600'
+                        : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 hover:border border-zinc-800'
+                    }`}
+                  >
+                    {renderIcon(item.icon)}
+                    <span className="flex-1 text-left">{item.name}</span>
+                    <HugeiconsIcon 
+                      icon={ArrowDown01Icon} 
+                      size={16} 
+                      strokeWidth={1.5} 
+                      className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  
+                  {isExpanded && (
+                    <div className="mt-1 ml-4 space-y-1">
+                      {item.items?.map((subItem: any) => {
+                        const isActive = pathname === subItem.href;
+                        return (
+                          <Link
+                            key={subItem.name}
+                            href={subItem.href}
+                            onClick={() => setSidebarOpen(false)}
+                            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                              isActive
+                                ? 'bg-zinc-800 text-white border border-zinc-600 shadow-md'
+                                : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 hover:border border-zinc-800'
+                            }`}
+                          >
+                            {renderIcon(subItem.icon)}
+                            {subItem.name}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+            
             const isActive = pathname === item.href;
             return (
               <Link

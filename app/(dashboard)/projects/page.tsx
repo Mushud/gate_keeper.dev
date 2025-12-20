@@ -13,10 +13,13 @@ import { CardSkeleton } from '@/components/ui/skeleton';
 
 interface Project {
   _id: string;
+  projectID: string;
   name: string;
   senderID: string;
   status: string;
   createdAt: string;
+  apiKey?: string;
+  services?: string[];
 }
 
 // Simple in-memory cache for projects
@@ -102,10 +105,18 @@ export default function ProjectsPage() {
   const [creating, setCreating] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showApiKey, setShowApiKey] = useState<string | null>(null);
+  const [visibleApiKeys, setVisibleApiKeys] = useState<{ [key: string]: boolean }>({});
   const [formData, setFormData] = useState({ name: '', senderID: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [newApiKey, setNewApiKey] = useState('');
+
+  const toggleApiKeyVisibility = (projectId: string) => {
+    setVisibleApiKeys(prev => ({
+      ...prev,
+      [projectId]: !prev[projectId]
+    }));
+  };
 
   useEffect(() => {
     // Only fetch if we don't have cached data or cache is stale
@@ -250,71 +261,6 @@ export default function ProjectsPage() {
             <CardSkeleton />
           </>
         ) : null}
-        {!loading && projects.map((project) => (
-          <Card key={project._id} className="relative overflow-hidden">
-            <Grid />
-            
-            <CardHeader className="relative">
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg font-semibold">{project.name}</CardTitle>
-                  <CardDescription className="mt-1 text-sm">
-                    Sender ID: {project.senderID}
-                  </CardDescription>
-                </div>
-                <span className={`px-2 py-1 text-xs rounded-full ${project.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                  {project.status}
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3 relative">
-              <div className="text-sm text-zinc-600">
-                Created: {new Date(project.createdAt).toLocaleDateString()}
-              </div>
-
-              {showApiKey === project._id && newApiKey && (
-                <div className="bg-zinc-50 p-3 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-zinc-700">API Key</span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => copyToClipboard(newApiKey)}
-                    >
-                      <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
-                    </Button>
-                  </div>
-                  <code className="text-xs bg-white p-2 rounded block break-all">
-                    {newApiKey}
-                  </code>
-                  <p className="text-xs text-amber-600 mt-2">
-                    ⚠️ Save this key now - it won't be shown again!
-                  </p>
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleRegenerateKey(project._id)}
-                  className="flex-1"
-                >
-                  <HugeiconsIcon icon={Refresh01Icon} size={14} strokeWidth={1.5} className="mr-1" />
-                  Regenerate Key
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handleDeleteProject(project._id)}
-                >
-                  <HugeiconsIcon icon={Delete01Icon} size={16} strokeWidth={1.5} className="text-red-600" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-
         {!loading && projects.length === 0 && (
           <div className="col-span-full text-center py-12">
             <p className="text-zinc-600 mb-4">No projects yet</p>
@@ -323,6 +269,174 @@ export default function ProjectsPage() {
               Create Your First Project
             </Button>
           </div>
+        )}
+        {!loading && projects.length > 0 && (
+          <Card className="col-span-full">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="border-b bg-zinc-50">
+                  <tr>
+                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">Project Name</th>
+                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">Sender ID</th>
+                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">Services</th>
+                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">API Key</th>
+                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">Status</th>
+                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">Created</th>
+                    <th className="text-right p-4 font-semibold text-sm text-zinc-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {projects.map((project) => (
+                    <tr key={project._id} className="border-b last:border-0 hover:bg-zinc-50 transition-colors">
+                      <td className="p-4">
+                        <div className="font-medium text-zinc-900">{project.name}</div>
+                        <div className="text-xs text-zinc-500 mt-0.5">{project.projectID || project._id}</div>
+                      </td>
+                      <td className="p-4">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-sm font-medium">
+                          {project.senderID}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex flex-wrap gap-1.5 max-w-sm">
+                          {(project.services && project.services.length > 0) ? (
+                            project.services.map((service) => {
+                              // Color coding based on service type
+                              const getServiceStyle = (svc: string) => {
+                                if (svc === 'otp') return 'bg-blue-100 text-blue-700';
+                                if (svc === 'sms') return 'bg-purple-100 text-purple-700';
+                                if (svc === 'campaign') return 'bg-pink-100 text-pink-700';
+                                if (svc === 'checkout') return 'bg-orange-100 text-orange-700';
+                                if (svc.startsWith('kyc_')) return 'bg-green-100 text-green-700';
+                                return 'bg-zinc-100 text-zinc-700';
+                              };
+
+                              const formatServiceName = (svc: string) => {
+                                return svc
+                                  .replace('kyc_', 'KYC: ')
+                                  .split('_')
+                                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                  .join(' ');
+                              };
+
+                              return (
+                                <span
+                                  key={service}
+                                  className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${getServiceStyle(service)}`}
+                                  title={`${service} service enabled`}
+                                >
+                                  {formatServiceName(service)}
+                                </span>
+                              );
+                            })
+                          ) : (
+                            <div className="text-xs space-y-1">
+                              <div className="text-zinc-500 font-medium">Default Services:</div>
+                              <div className="flex flex-wrap gap-1">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-blue-50 text-blue-600">OTP</span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-purple-50 text-purple-600">SMS</span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-pink-50 text-pink-600">Campaign</span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-green-50 text-green-600">KYC: Phone</span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-orange-50 text-orange-600">Checkout</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 max-w-md">
+                            {project.apiKey ? (
+                              <>
+                                <code className="flex-1 text-xs bg-zinc-100 p-2 rounded font-mono truncate">
+                                  {visibleApiKeys[project._id] 
+                                    ? project.apiKey 
+                                    : '•'.repeat(40)}
+                                </code>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => toggleApiKeyVisibility(project._id)}
+                                  className="shrink-0"
+                                >
+                                  <HugeiconsIcon 
+                                    icon={visibleApiKeys[project._id] ? EyeFreeIcons : EyeIcon} 
+                                    size={16} 
+                                    strokeWidth={1.5} 
+                                  />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => copyToClipboard(project.apiKey!)}
+                                  className="shrink-0"
+                                >
+                                  <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
+                                </Button>
+                              </>
+                            ) : (
+                              <span className="text-xs text-zinc-400">No key available</span>
+                            )}
+                          </div>
+                          {showApiKey === project._id && newApiKey && (
+                            <div className="p-2 bg-amber-50 rounded border border-amber-200">
+                              <div className="flex items-center gap-2 mb-1">
+                                <code className="flex-1 text-xs bg-white p-2 rounded font-mono break-all">
+                                  {newApiKey}
+                                </code>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => copyToClipboard(newApiKey)}
+                                  className="shrink-0"
+                                >
+                                  <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
+                                </Button>
+                              </div>
+                              <p className="text-xs text-amber-700 font-medium">
+                                ⚠️ Save now!
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                          project.status === 'active' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {project.status}
+                        </span>
+                      </td>
+                      <td className="p-4 text-sm text-zinc-600 whitespace-nowrap">
+                        {new Date(project.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleRegenerateKey(project._id)}
+                          >
+                            <HugeiconsIcon icon={Refresh01Icon} size={14} strokeWidth={1.5} className="mr-1" />
+                            Regenerate
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDeleteProject(project._id)}
+                          >
+                            <HugeiconsIcon icon={Delete01Icon} size={16} strokeWidth={1.5} className="text-red-600" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         )}
       </div>
 

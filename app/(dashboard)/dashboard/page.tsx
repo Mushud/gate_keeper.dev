@@ -108,6 +108,14 @@ interface Analytics {
     verifiedOTPs: number[];
     unverifiedOTPs: number[];
     kycVerifications: number[];
+    smsSent?: number[];
+    kycByType?: {
+      phone: number[];
+      ghanaCard: number[];
+      ghanaCardEnhanced: number[];
+      mobileMoney: number[];
+      bankAccount: number[];
+    };
   };
   kyc?: {
     total: number;
@@ -115,6 +123,16 @@ interface Analytics {
     notFoundCount: number;
     failedCount: number;
     totalCreditsUsed: number;
+    byType?: Array<{
+      _id: string;
+      count: number;
+    }>;
+  };
+  sms?: {
+    totalCampaigns: number;
+    totalSent: number;
+    totalFailed: number;
+    creditsUsed: number;
   };
 }
 
@@ -135,6 +153,9 @@ export default function DashboardPage() {
       const data = response.data.payload || response.data;
 
       console.log("Analytics API Response:", data);
+      console.log("KYC Data:", data.kyc);
+      console.log("Daily Stats:", data.dailyStats);
+      console.log("KYC By Type:", data.dailyStats?.kycByType);
 
       // Generate mock daily stats if backend doesn't provide them yet
       const generateMockDailyStats = () => {
@@ -194,6 +215,15 @@ export default function DashboardPage() {
               notFoundCount: data.kyc.notFoundCount || 0,
               failedCount: data.kyc.failedCount || 0,
               totalCreditsUsed: data.kyc.totalCreditsUsed || 0,
+              byType: data.kyc.byType || [],
+            }
+          : undefined,
+        sms: data.sms
+          ? {
+              totalCampaigns: data.sms.totalCampaigns || 0,
+              totalSent: data.sms.totalSent || 0,
+              totalFailed: data.sms.totalFailed || 0,
+              creditsUsed: data.sms.creditsUsed || 0,
             }
           : undefined,
       };
@@ -225,6 +255,15 @@ export default function DashboardPage() {
       color: "bg-green-500",
       trend: `${analytics?.todayOTPs || 0} today`,
       trendColor: "text-green-600",
+    },
+    {
+      title: "SMS Sent",
+      value: loading ? "..." : (analytics?.sms?.totalSent || 0).toLocaleString(),
+      subtitle: `${analytics?.sms?.totalCampaigns || 0} campaigns`,
+      icon: Message01Icon,
+      color: "bg-blue-500",
+      trend: `${analytics?.sms?.creditsUsed || 0} credits used`,
+      trendColor: "text-blue-600",
     },
     {
       title: "Success Rate",
@@ -304,7 +343,7 @@ export default function DashboardPage() {
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {loading ? (
           <>
             <div className="border border-zinc-200 rounded-lg p-4 space-y-3">
@@ -587,13 +626,22 @@ export default function DashboardPage() {
                       highcharts={Highcharts}
                       options={{
                         chart: {
-                          type: "areaspline",
+                          type: analytics?.dailyStats?.kycByType ? "spline" : "areaspline",
                           height: 240,
                           backgroundColor: "transparent",
                         },
                         title: { text: "" },
                         credits: { enabled: false },
-                        legend: { enabled: false },
+                        legend: {
+                          enabled: analytics?.dailyStats?.kycByType ? true : false,
+                          align: "center",
+                          verticalAlign: "bottom",
+                          itemStyle: {
+                            color: "#71717a",
+                            fontSize: "10px",
+                            fontWeight: "500",
+                          },
+                        },
                         xAxis: {
                           categories: analytics?.dailyStats?.dates || [
                             "Mon",
@@ -617,7 +665,18 @@ export default function DashboardPage() {
                             style: { color: "#71717a", fontSize: "11px" },
                           },
                         },
-                        plotOptions: {
+                        plotOptions: analytics?.dailyStats?.kycByType ? {
+                          spline: {
+                            lineWidth: 2,
+                            marker: {
+                              enabled: false,
+                              states: { hover: { enabled: true, radius: 4 } },
+                            },
+                            states: {
+                              hover: { lineWidth: 3 },
+                            },
+                          },
+                        } : {
                           areaspline: {
                             fillOpacity: 0.2,
                             lineWidth: 3,
@@ -627,7 +686,33 @@ export default function DashboardPage() {
                             },
                           },
                         },
-                        series: [
+                        series: analytics?.dailyStats?.kycByType ? [
+                          {
+                            name: "Phone",
+                            data: analytics.dailyStats.kycByType.phone,
+                            color: "#3b82f6",
+                          },
+                          {
+                            name: "Ghana Card",
+                            data: analytics.dailyStats.kycByType.ghanaCard,
+                            color: "#8b5cf6",
+                          },
+                          {
+                            name: "Enhanced",
+                            data: analytics.dailyStats.kycByType.ghanaCardEnhanced,
+                            color: "#f59e0b",
+                          },
+                          {
+                            name: "Mobile Money",
+                            data: analytics.dailyStats.kycByType.mobileMoney,
+                            color: "#10b981",
+                          },
+                          {
+                            name: "Bank Account",
+                            data: analytics.dailyStats.kycByType.bankAccount,
+                            color: "#ec4899",
+                          },
+                        ] : [
                           {
                             name: "KYC Verifications",
                             data: analytics?.dailyStats?.kycVerifications || [
@@ -647,16 +732,15 @@ export default function DashboardPage() {
                           backgroundColor: "#18181b",
                           borderColor: "#18181b",
                           style: { color: "#ffffff" },
-                          formatter: function (this: any): string {
-                            return `<b>${this.x}</b><br/>${this.series.name}: <b>${this.y}</b>`;
-                          },
+                          shared: true,
+                          crosshairs: true,
                         },
                       }}
                     />
 
                     <div className="flex items-center justify-between text-xs pt-4 mt-auto border-t border-zinc-200">
                       <span className="text-zinc-600">
-                        Phone name verification
+                        {analytics?.dailyStats?.kycByType ? "5 verification types" : "Total verifications"}
                       </span>
                       <span className="font-semibold text-amber-600">
                         {analytics.kyc.total > 0

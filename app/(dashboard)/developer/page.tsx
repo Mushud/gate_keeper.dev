@@ -1,10 +1,24 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { CodeIcon, Copy01Icon, BookOpen01Icon, LockPasswordIcon, CheckmarkCircle01Icon, AlertCircleIcon, ShieldIcon } from '@hugeicons/core-free-icons';
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  CodeIcon,
+  Copy01Icon,
+  BookOpen01Icon,
+  LockPasswordIcon,
+  CheckmarkCircle01Icon,
+  AlertCircleIcon,
+  ShieldIcon,
+} from "@hugeicons/core-free-icons";
 
 export default function DeveloperDocsPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -15,7 +29,15 @@ export default function DeveloperDocsPage() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const CodeBlock = ({ code, id, language = 'bash' }: { code: string; id: string; language?: string }) => (
+  const CodeBlock = ({
+    code,
+    id,
+    language = "bash",
+  }: {
+    code: string;
+    id: string;
+    language?: string;
+  }) => (
     <div className="relative">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs text-zinc-500 font-medium">{language}</span>
@@ -27,12 +49,22 @@ export default function DeveloperDocsPage() {
         >
           {copiedId === id ? (
             <>
-              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} strokeWidth={1.5} className="mr-1" />
+              <HugeiconsIcon
+                icon={CheckmarkCircle01Icon}
+                size={12}
+                strokeWidth={1.5}
+                className="mr-1"
+              />
               Copied
             </>
           ) : (
             <>
-              <HugeiconsIcon icon={Copy01Icon} size={12} strokeWidth={1.5} className="mr-1" />
+              <HugeiconsIcon
+                icon={Copy01Icon}
+                size={12}
+                strokeWidth={1.5}
+                className="mr-1"
+              />
               Copy
             </>
           )}
@@ -52,7 +84,8 @@ export default function DeveloperDocsPage() {
           Developer Documentation
         </h1>
         <p className="text-zinc-600 mt-2">
-          Complete API reference for integrating OTP verification in your applications
+          Complete API reference for integrating OTP verification in your
+          applications
         </p>
       </div>
 
@@ -60,15 +93,26 @@ export default function DeveloperDocsPage() {
       <Card className="mb-6 border-blue-200 bg-blue-50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <HugeiconsIcon icon={AlertCircleIcon} size={20} strokeWidth={1.5} className="text-blue-600" />
+            <HugeiconsIcon
+              icon={AlertCircleIcon}
+              size={20}
+              strokeWidth={1.5}
+              className="text-blue-600"
+            />
             Quick Start Guide
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <ol className="list-decimal list-inside space-y-2 text-sm text-blue-900">
-            <li>Create a project in the Projects section to get your API key</li>
+            <li>
+              Create a project in the Projects section to get your API key
+            </li>
             <li>Save your API key securely (it's only shown once)</li>
-            <li>Use the API key in the <code className="bg-blue-100 px-1 py-0.5 rounded">X-API-Key</code> header for all requests</li>
+            <li>
+              Use the API key in the{" "}
+              <code className="bg-blue-100 px-1 py-0.5 rounded">X-API-Key</code>{" "}
+              header for all requests
+            </li>
             <li>Ensure you have sufficient credits in your account balance</li>
           </ol>
         </CardContent>
@@ -78,10 +122,16 @@ export default function DeveloperDocsPage() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <HugeiconsIcon icon={LockPasswordIcon} size={20} strokeWidth={1.5} />
+            <HugeiconsIcon
+              icon={LockPasswordIcon}
+              size={20}
+              strokeWidth={1.5}
+            />
             Authentication
           </CardTitle>
-          <CardDescription>All API requests require authentication using your project API key</CardDescription>
+          <CardDescription>
+            All API requests require authentication using your project API key
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-zinc-700">
@@ -99,14 +149,17 @@ export default function DeveloperDocsPage() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Generate OTP</CardTitle>
-          <CardDescription>Create and send an OTP to a phone number or email</CardDescription>
+          <CardDescription>
+            Create and send an OTP to a phone number or email
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Endpoint */}
           <div>
             <h4 className="font-semibold text-sm mb-2">Endpoint</h4>
             <code className="bg-zinc-100 px-3 py-2 rounded block text-sm">
-              POST {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/generate_otp
+              POST {process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}
+              /api/generate_otp
             </code>
           </div>
 
@@ -141,7 +194,9 @@ Content-Type: application/json`}
 
           {/* Response */}
           <div>
-            <h4 className="font-semibold text-sm mb-2">Success Response (200 OK)</h4>
+            <h4 className="font-semibold text-sm mb-2">
+              Success Response (200 OK)
+            </h4>
             <CodeBlock
               id="gen-response"
               language="JSON"
@@ -163,7 +218,9 @@ Content-Type: application/json`}
             <CodeBlock
               id="gen-curl"
               language="bash"
-              code={`curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/generate_otp \\
+              code={`curl -X POST ${
+                process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+              }/api/generate_otp \\
   -H "X-API-Key: your-project-api-key" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -180,7 +237,9 @@ Content-Type: application/json`}
             <CodeBlock
               id="gen-js"
               language="JavaScript"
-              code={`const response = await fetch('${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/generate_otp', {
+              code={`const response = await fetch('${
+                process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+              }/api/generate_otp', {
   method: 'POST',
   headers: {
     'X-API-Key': 'your-project-api-key',
@@ -205,14 +264,17 @@ console.log('OTP Reference:', data.reference);
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Verify OTP</CardTitle>
-          <CardDescription>Validate the OTP code entered by the user</CardDescription>
+          <CardDescription>
+            Validate the OTP code entered by the user
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Endpoint */}
           <div>
             <h4 className="font-semibold text-sm mb-2">Endpoint</h4>
             <code className="bg-zinc-100 px-3 py-2 rounded block text-sm">
-              POST {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/verify_otp
+              POST {process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}
+              /api/verify_otp
             </code>
           </div>
 
@@ -241,7 +303,9 @@ Content-Type: application/json`}
 
           {/* Response */}
           <div>
-            <h4 className="font-semibold text-sm mb-2">Success Response (200 OK)</h4>
+            <h4 className="font-semibold text-sm mb-2">
+              Success Response (200 OK)
+            </h4>
             <CodeBlock
               id="verify-response"
               language="JSON"
@@ -257,7 +321,9 @@ Content-Type: application/json`}
 
           {/* Error Response */}
           <div>
-            <h4 className="font-semibold text-sm mb-2">Error Response (400 Bad Request)</h4>
+            <h4 className="font-semibold text-sm mb-2">
+              Error Response (400 Bad Request)
+            </h4>
             <CodeBlock
               id="verify-error"
               language="JSON"
@@ -275,7 +341,9 @@ Content-Type: application/json`}
             <CodeBlock
               id="verify-curl"
               language="bash"
-              code={`curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/verify_otp \\
+              code={`curl -X POST ${
+                process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+              }/api/verify_otp \\
   -H "X-API-Key: your-project-api-key" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -291,7 +359,9 @@ Content-Type: application/json`}
             <CodeBlock
               id="verify-js"
               language="JavaScript"
-              code={`const response = await fetch('${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/verify_otp', {
+              code={`const response = await fetch('${
+                process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+              }/api/verify_otp', {
   method: 'POST',
   headers: {
     'X-API-Key': 'your-project-api-key',
@@ -323,238 +393,108 @@ if (data.verified) {
         <CardContent>
           <div className="space-y-4">
             <div className="flex gap-3">
-              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} strokeWidth={1.5} className="text-green-600 flex-shrink-0 mt-0.5" />
+              <HugeiconsIcon
+                icon={CheckmarkCircle01Icon}
+                size={20}
+                strokeWidth={1.5}
+                className="text-green-600 flex-shrink-0 mt-0.5"
+              />
               <div>
-                <h4 className="font-semibold text-sm mb-1">Store API Keys Securely</h4>
+                <h4 className="font-semibold text-sm mb-1">
+                  Store API Keys Securely
+                </h4>
                 <p className="text-sm text-zinc-600">
-                  Never expose API keys in client-side code. Always make OTP requests from your backend server.
+                  Never expose API keys in client-side code. Always make OTP
+                  requests from your backend server.
                 </p>
               </div>
             </div>
 
             <div className="flex gap-3">
-              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} strokeWidth={1.5} className="text-green-600 flex-shrink-0 mt-0.5" />
+              <HugeiconsIcon
+                icon={CheckmarkCircle01Icon}
+                size={20}
+                strokeWidth={1.5}
+                className="text-green-600 flex-shrink-0 mt-0.5"
+              />
               <div>
-                <h4 className="font-semibold text-sm mb-1">Save the Reference ID</h4>
+                <h4 className="font-semibold text-sm mb-1">
+                  Save the Reference ID
+                </h4>
                 <p className="text-sm text-zinc-600">
-                  Store the reference returned from generate_otp. You'll need it to verify the OTP later.
+                  Store the reference returned from generate_otp. You'll need it
+                  to verify the OTP later.
                 </p>
               </div>
             </div>
 
             <div className="flex gap-3">
-              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} strokeWidth={1.5} className="text-green-600 flex-shrink-0 mt-0.5" />
+              <HugeiconsIcon
+                icon={CheckmarkCircle01Icon}
+                size={20}
+                strokeWidth={1.5}
+                className="text-green-600 flex-shrink-0 mt-0.5"
+              />
               <div>
-                <h4 className="font-semibold text-sm mb-1">Handle Errors Gracefully</h4>
+                <h4 className="font-semibold text-sm mb-1">
+                  Handle Errors Gracefully
+                </h4>
                 <p className="text-sm text-zinc-600">
-                  Check for insufficient balance, invalid phone numbers, and rate limits. Show clear messages to users.
+                  Check for insufficient balance, invalid phone numbers, and
+                  rate limits. Show clear messages to users.
                 </p>
               </div>
             </div>
 
             <div className="flex gap-3">
-              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} strokeWidth={1.5} className="text-green-600 flex-shrink-0 mt-0.5" />
+              <HugeiconsIcon
+                icon={CheckmarkCircle01Icon}
+                size={20}
+                strokeWidth={1.5}
+                className="text-green-600 flex-shrink-0 mt-0.5"
+              />
               <div>
                 <h4 className="font-semibold text-sm mb-1">OTP Expiration</h4>
                 <p className="text-sm text-zinc-600">
-                  OTPs expire after 10 minutes. Allow users to request a new OTP if expired.
+                  OTPs expire after 10 minutes. Allow users to request a new OTP
+                  if expired.
                 </p>
               </div>
             </div>
 
             <div className="flex gap-3">
-              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} strokeWidth={1.5} className="text-green-600 flex-shrink-0 mt-0.5" />
+              <HugeiconsIcon
+                icon={CheckmarkCircle01Icon}
+                size={20}
+                strokeWidth={1.5}
+                className="text-green-600 flex-shrink-0 mt-0.5"
+              />
               <div>
                 <h4 className="font-semibold text-sm mb-1">Rate Limiting</h4>
                 <p className="text-sm text-zinc-600">
-                  The API has built-in rate limiting to prevent abuse. Implement exponential backoff for retries.
+                  The API has built-in rate limiting to prevent abuse. Implement
+                  exponential backoff for retries.
                 </p>
               </div>
             </div>
 
             <div className="flex gap-3">
-              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} strokeWidth={1.5} className="text-green-600 flex-shrink-0 mt-0.5" />
+              <HugeiconsIcon
+                icon={CheckmarkCircle01Icon}
+                size={20}
+                strokeWidth={1.5}
+                className="text-green-600 flex-shrink-0 mt-0.5"
+              />
               <div>
-                <h4 className="font-semibold text-sm mb-1">Name Auto-Resolution</h4>
+                <h4 className="font-semibold text-sm mb-1">
+                  Name Auto-Resolution
+                </h4>
                 <p className="text-sm text-zinc-600">
-                  The API automatically resolves user names from phone numbers when available, making signup flows smoother.
+                  The API automatically resolves user names from phone numbers
+                  when available, making signup flows smoother.
                 </p>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* KYC Phone Verification */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <HugeiconsIcon icon={ShieldIcon} size={20} strokeWidth={1.5} />
-            KYC Phone Verification
-          </CardTitle>
-          <CardDescription>
-            Verify phone numbers and resolve registered names
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
-            <h3 className="text-sm font-semibold mb-3">Verify Phone Number</h3>
-            <p className="text-sm text-zinc-600 mb-3">
-              Verify a Ghanaian phone number and get the registered name. Costs 1 credit per verification.
-            </p>
-            <CodeBlock
-              id="kyc-verify"
-              language="bash"
-              code={`curl -X POST https://api.gatekeeperpro.live/api/kyc/verify-phone \\
-  -H "Content-Type: application/json" \\
-  -H "X-API-Key: YOUR_API_KEY" \\
-  -d '{
-    "phoneNumber": "0551234567"
-  }'`}
-            />
-            <div className="mt-3 p-3 bg-zinc-50 rounded-lg">
-              <p className="text-xs font-semibold text-zinc-700 mb-2">Response:</p>
-              <pre className="text-xs text-zinc-600 overflow-x-auto">
-{`{
-  "success": true,
-  "data": {
-    "phoneNumber": "+233551234567",
-    "name": "John Doe",
-    "status": "success",
-    "verificationId": "65abc...",
-    "timestamp": "2025-12-15T10:30:00Z"
-  }
-}`}
-              </pre>
-            </div>
-          </div>
-
-          <div className="border-t pt-6">
-            <h3 className="text-sm font-semibold mb-3">Get Verification History</h3>
-            <p className="text-sm text-zinc-600 mb-3">
-              Retrieve your verification history with pagination support.
-            </p>
-            <CodeBlock
-              id="kyc-history"
-              language="bash"
-              code={`curl -X GET "https://api.gatekeeperpro.live/api/kyc/history?limit=50&page=1" \\
-  -H "X-API-Key: YOUR_API_KEY"`}
-            />
-            <div className="mt-3 p-3 bg-zinc-50 rounded-lg">
-              <p className="text-xs font-semibold text-zinc-700 mb-2">Response:</p>
-              <pre className="text-xs text-zinc-600 overflow-x-auto">
-{`{
-  "success": true,
-  "data": {
-    "verifications": [
-      {
-        "_id": "65abc...",
-        "phoneNumber": "+233551234567",
-        "resolvedName": "John Doe",
-        "status": "success",
-        "creditDeducted": 1,
-        "createdAt": "2025-12-15T10:30:00Z"
-      }
-    ],
-    "pagination": {
-      "total": 150,
-      "page": 1,
-      "limit": 50,
-      "totalPages": 3
-    }
-  }
-}`}
-              </pre>
-            </div>
-          </div>
-
-          <div className="border-t pt-6">
-            <h3 className="text-sm font-semibold mb-3">Phone Number Format</h3>
-            <div className="space-y-2 text-sm">
-              <p className="text-zinc-600">Supports both formats:</p>
-              <ul className="list-disc list-inside space-y-1 text-zinc-600 ml-2">
-                <li><code className="bg-zinc-100 px-1 py-0.5 rounded">0551234567</code> - Local format</li>
-                <li><code className="bg-zinc-100 px-1 py-0.5 rounded">+233551234567</code> - International format</li>
-              </ul>
-              <p className="text-zinc-600 mt-3">
-                Validation: Must be a valid Ghanaian mobile number (MTN, Vodafone, AirtelTigo)
-              </p>
-            </div>
-          </div>
-
-          <div className="border-t pt-6">
-            <h3 className="text-sm font-semibold mb-3">Status Codes</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex items-start gap-2">
-                <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">success</span>
-                <span className="text-zinc-600">Name found and returned</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">not_found</span>
-                <span className="text-zinc-600">Number is valid but name not registered</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">failed</span>
-                <span className="text-zinc-600">Verification failed due to an error</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-900 flex items-center gap-2">
-              <HugeiconsIcon icon={AlertCircleIcon} size={16} strokeWidth={1.5} className="flex-shrink-0" />
-              <span>
-                <strong>Note:</strong> Each verification deducts 1 credit regardless of whether a name is found or not.
-                Make sure you have sufficient balance before making requests.
-              </span>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Error Codes */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Common Error Codes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b">
-                <tr>
-                  <th className="text-left py-2 px-3">Code</th>
-                  <th className="text-left py-2 px-3">Error</th>
-                  <th className="text-left py-2 px-3">Solution</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                <tr>
-                  <td className="py-2 px-3 font-mono">401</td>
-                  <td className="py-2 px-3">Invalid API Key</td>
-                  <td className="py-2 px-3">Check your X-API-Key header</td>
-                </tr>
-                <tr>
-                  <td className="py-2 px-3 font-mono">402</td>
-                  <td className="py-2 px-3">Insufficient Balance</td>
-                  <td className="py-2 px-3">Purchase credits in Billing section</td>
-                </tr>
-                <tr>
-                  <td className="py-2 px-3 font-mono">400</td>
-                  <td className="py-2 px-3">Invalid OTP Code / Phone Format</td>
-                  <td className="py-2 px-3">Check input format and validation</td>
-                </tr>
-                <tr>
-                  <td className="py-2 px-3 font-mono">404</td>
-                  <td className="py-2 px-3">Reference Not Found</td>
-                  <td className="py-2 px-3">OTP expired or invalid reference</td>
-                </tr>
-                <tr>
-                  <td className="py-2 px-3 font-mono">429</td>
-                  <td className="py-2 px-3">Too Many Requests</td>
-                  <td className="py-2 px-3">Rate limit exceeded, wait before retry</td>
-                </tr>
-              </tbody>
-            </table>
           </div>
         </CardContent>
       </Card>
@@ -566,15 +506,12 @@ if (data.verified) {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-zinc-600 mb-4">
-            If you encounter any issues or have questions about the API, please reach out:
+            If you encounter any issues or have questions about the API, please
+            reach out:
           </p>
           <div className="flex gap-4">
-            <Button variant="outline">
-              View Projects
-            </Button>
-            <Button variant="outline">
-              Check Logs
-            </Button>
+            <Button variant="outline">View Projects</Button>
+            <Button variant="outline">Check Logs</Button>
           </div>
         </CardContent>
       </Card>
