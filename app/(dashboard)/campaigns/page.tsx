@@ -203,6 +203,31 @@ export default function CampaignsPage() {
     }
   };
 
+  const fetchSingleCampaign = async (campaignId: string) => {
+    try {
+      const campaign = campaigns.find(c => c._id === campaignId);
+      if (!campaign?.project?._id) return;
+
+      const project = projects.find(p => p._id === campaign.project?._id);
+      if (!project?.apiKey && !project?.projectID) return;
+      
+      const key = project.apiKey || project.projectID;
+      
+      const response = await api.get(`/api/campaigns/${campaignId}`, {
+        headers: { key }
+      });
+      
+      const updatedCampaign = response.data.campaign;
+      
+      // Update only this campaign in the state
+      setCampaigns(prev => 
+        prev.map(c => c._id === campaignId ? updatedCampaign : c)
+      );
+    } catch (error) {
+      console.error(`Failed to fetch campaign ${campaignId}:`, error);
+    }
+  };
+
   const createCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProject || !name || !message || !receivers) return;
@@ -285,39 +310,14 @@ export default function CampaignsPage() {
         { headers: { key } }
       );
       
-      showAlert('Campaign execution started! The campaign status will update as messages are sent.', 'success');
+      showAlert('Campaign execution started! Refresh the page to see updated status.', 'success');
       
-      // Immediately refresh the campaigns list
+      // Refresh campaigns list once
       fetchCampaigns();
-      
-      // Start polling for updates
-      startPolling();
     } catch (error: any) {
       showAlert(error.response?.data?.error || 'Failed to execute campaign', 'error');
     }
   };
-
-  // Poll for campaign updates every 3 seconds when there are processing campaigns
-  const startPolling = () => {
-    const pollInterval = setInterval(() => {
-      const hasProcessingCampaigns = campaigns.some(c => c.status === 'processing');
-      if (hasProcessingCampaigns) {
-        fetchCampaigns();
-      } else {
-        clearInterval(pollInterval);
-      }
-    }, 3000);
-
-    // Clear interval after 5 minutes
-    setTimeout(() => clearInterval(pollInterval), 5 * 60 * 1000);
-  };
-
-  // Auto-start polling if there are processing campaigns on mount
-  useEffect(() => {
-    if (campaigns.some(c => c.status === 'processing')) {
-      startPolling();
-    }
-  }, [campaigns]);
 
   const viewCampaignDetails = async (campaignId: string) => {
     setLoading(true);
