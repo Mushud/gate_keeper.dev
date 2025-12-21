@@ -56,7 +56,7 @@ interface Campaign {
   createdAt: string;
   sentAt?: string;
   logs?: string[];
-  project?: {
+  project?: string | {
     _id: string;
     name: string;
     senderID: string;
@@ -134,6 +134,9 @@ export default function CampaignsPage() {
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingCampaignId, setLoadingCampaignId] = useState<string | null>(null);
+  const [executingCampaignId, setExecutingCampaignId] = useState<string | null>(null);
+  const [refreshingCampaignId, setRefreshingCampaignId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
@@ -204,11 +207,14 @@ export default function CampaignsPage() {
   };
 
   const fetchSingleCampaign = async (campaignId: string) => {
+    setRefreshingCampaignId(campaignId);
     try {
       const campaign = campaigns.find(c => c._id === campaignId);
-      if (!campaign?.project?._id) return;
+      if (!campaign?.project) return;
 
-      const project = projects.find(p => p._id === campaign.project?._id);
+      // Handle project as both string ID and object
+      const projectId = typeof campaign.project === 'string' ? campaign.project : campaign.project._id;
+      const project = projects.find(p => p._id === projectId);
       if (!project?.apiKey && !project?.projectID) return;
       
       const key = project.apiKey || project.projectID;
@@ -225,6 +231,8 @@ export default function CampaignsPage() {
       );
     } catch (error) {
       console.error(`Failed to fetch campaign ${campaignId}:`, error);
+    } finally {
+      setRefreshingCampaignId(null);
     }
   };
 
@@ -287,17 +295,22 @@ export default function CampaignsPage() {
       return;
     }
 
+    setExecutingCampaignId(campaignId);
     try {
       // Find the campaign to get its project
       const campaign = campaigns.find(c => c._id === campaignId);
-      if (!campaign?.project?._id) {
+      if (!campaign?.project) {
         showAlert('Campaign project not found.', 'error');
+        setExecutingCampaignId(null);
         return;
       }
 
-      const project = projects.find(p => p._id === campaign.project?._id);
+      // Handle project as both string ID and object
+      const projectId = typeof campaign.project === 'string' ? campaign.project : campaign.project._id;
+      const project = projects.find(p => p._id === projectId);
       if (!project?.apiKey && !project?.projectID) {
         showAlert('Project key not found. Please try refreshing the page.', 'error');
+        setExecutingCampaignId(null);
         return;
       }
       
@@ -310,30 +323,36 @@ export default function CampaignsPage() {
         { headers: { key } }
       );
       
-      showAlert('Campaign execution started! Refresh the page to see updated status.', 'success');
+      showAlert('Campaign execution started! The campaign will update automatically.', 'success');
       
-      // Refresh campaigns list once
-      fetchCampaigns();
+      // Refresh only this campaign
+      setTimeout(() => {
+        fetchSingleCampaign(campaignId);
+      }, 500);
     } catch (error: any) {
       showAlert(error.response?.data?.error || 'Failed to execute campaign', 'error');
+    } finally {
+      setExecutingCampaignId(null);
     }
   };
 
   const viewCampaignDetails = async (campaignId: string) => {
-    setLoading(true);
+    setLoadingCampaignId(campaignId);
     try {
       // Find the campaign to get its project
       const campaign = campaigns.find(c => c._id === campaignId);
-      if (!campaign?.project?._id) {
+      if (!campaign?.project) {
         showAlert('Campaign project not found.', 'error');
-        setLoading(false);
+        setLoadingCampaignId(null);
         return;
       }
 
-      const project = projects.find(p => p._id === campaign.project?._id);
+      // Handle project as both string ID and object
+      const projectId = typeof campaign.project === 'string' ? campaign.project : campaign.project._id;
+      const project = projects.find(p => p._id === projectId);
       if (!project?.apiKey && !project?.projectID) {
         showAlert('Project key not found. Please try refreshing the page.', 'error');
-        setLoading(false);
+        setLoadingCampaignId(null);
         return;
       }
       
@@ -348,7 +367,7 @@ export default function CampaignsPage() {
     } catch (error) {
       showAlert('Failed to fetch campaign details', 'error');
     } finally {
-      setLoading(false);
+      setLoadingCampaignId(null);
     }
   };
 
@@ -686,8 +705,12 @@ export default function CampaignsPage() {
                       <td className="p-4">
                         {campaign.project ? (
                           <div className="text-sm">
-                            <div className="font-medium">{campaign.project.name}</div>
-                            <div className="text-xs text-muted-foreground">{campaign.project.senderID}</div>
+                            <div className="font-medium">
+                              {typeof campaign.project === 'string' ? 'Project' : campaign.project.name}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {typeof campaign.project === 'string' ? campaign.project : campaign.project.senderID}
+                            </div>
                           </div>
                         ) : (
                           <span className="text-xs text-muted-foreground">-</span>
@@ -730,15 +753,56 @@ export default function CampaignsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => viewCampaignDetails(campaign._id)}
+                            disabled={loadingCampaignId === campaign._id}
                           >
-                            <HugeiconsIcon icon={ViewIcon} className="h-4 w-4" />
+                            {loadingCampaignId === campaign._id ? (
+                              <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <HugeiconsIcon icon={ViewIcon} className="h-4 w-4" />
+                            )}
                           </Button>
+                          {campaign.status === 'processing' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => fetchSingleCampaign(campaign._id)}
+                              title="Refresh campaign status"
+                              disabled={refreshingCampaignId === campaign._id}
+                            >
+                              {refreshingCampaignId === campaign._id ? (
+                                <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <HugeiconsIcon icon={Refresh01Icon} className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
                           {campaign.status === 'pending' && (
                             <Button
                               size="sm"
                               onClick={() => executeCampaign(campaign._id)}
+                              title="Send campaign"
+                              disabled={executingCampaignId === campaign._id}
                             >
-                              <HugeiconsIcon icon={SentIcon} className="h-4 w-4" />
+                              {executingCampaignId === campaign._id ? (
+                                <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <HugeiconsIcon icon={SentIcon} className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
+                          {campaign.status === 'sent' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => executeCampaign(campaign._id)}
+                              title="Resend campaign"
+                              disabled={executingCampaignId === campaign._id}
+                            >
+                              {executingCampaignId === campaign._id ? (
+                                <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <HugeiconsIcon icon={SentIcon} className="h-4 w-4" />
+                              )}
                             </Button>
                           )}
                         </div>
