@@ -12,8 +12,6 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
-  // Optimize loading performance
-  swcMinify: true,
   // Enable incremental static regeneration
   onDemandEntries: {
     // Period (in ms) where the server will keep pages in the buffer

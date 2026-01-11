@@ -59,6 +59,7 @@ interface Campaign {
   description?: string;
   message: string;
   subject?: string; // For email campaigns
+  type?: 'email' | 'sms'; // Campaign type
   receivers: string[];
   status: 'pending' | 'sent' | 'failed' | 'processing';
   totalReceivers: number;
