@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AuthProvider, useAuth } from '@/lib/auth';
-import { Home01Icon, Folder01Icon, ShieldIcon, ShoppingCart01Icon, File01Icon, BookOpen01Icon, CreditCardIcon, Settings02Icon, Menu01Icon, Cancel01Icon, Logout01Icon, Message01Icon, MailSend01Icon, ArrowDown01Icon } from '@hugeicons/core-free-icons';
+import { Home01Icon, Folder01Icon, ShieldIcon, ShoppingCart01Icon, File01Icon, BookOpen01Icon, CreditCardIcon, Settings02Icon, Menu01Icon, Cancel01Icon, Logout01Icon, Message01Icon, MailSend01Icon, ArrowDown01Icon, Mail01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
@@ -51,7 +51,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       icon: 'message', 
       group: true,
       items: [
-        { name: 'Send SMS', href: '/sms', icon: 'message' },
+        { name: 'SMS', href: '/sms', icon: 'message' },
+        { name: 'Email', href: '/email', icon: 'mail' },
         { name: 'Campaigns', href: '/campaigns', icon: 'mail-send' },
       ]
     },
@@ -78,6 +79,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     
     switch(iconName) {
       case 'message': return <HugeiconsIcon icon={Message01Icon} size={size} strokeWidth={strokeWidth} />;
+      case 'mail': return <HugeiconsIcon icon={Mail01Icon} size={size} strokeWidth={strokeWidth} />;
       case 'mail-send': return <HugeiconsIcon icon={MailSend01Icon} size={size} strokeWidth={strokeWidth} />;
       case 'home': return <HugeiconsIcon icon={Home01Icon} size={size} strokeWidth={strokeWidth} />;
       case 'folder': return <HugeiconsIcon icon={Folder01Icon} size={size} strokeWidth={strokeWidth} />;

@@ -284,7 +284,7 @@ export default function DashboardPage() {
           : "text-red-600",
     },
     {
-      title: "This Month",
+      title: "Today",
       value: loading ? "..." : (analytics?.todayOTPs || 0).toLocaleString(),
       subtitle: "OTPs sent",
       icon: Calendar01Icon,

@@ -9,10 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Message01Icon, UserMultiple02Icon, Refresh01Icon, CheckmarkCircle01Icon, Cancel01Icon, InformationCircleIcon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { Mail01Icon, UserMultiple02Icon, Refresh01Icon, CheckmarkCircle01Icon, Cancel01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Badge } from '@/components/ui/badge';
-import Link from 'next/link';
 
 interface Project {
   _id: string;
@@ -21,6 +20,17 @@ interface Project {
   senderID: string;
   status: string;
   apiKey: string;
+  settings?: {
+    email?: {
+      smtp?: {
+        host?: string;
+        port?: number;
+        user?: string;
+        password?: string;
+        fromAddress?: string;
+      };
+    };
+  };
 }
 
 function GridPattern({ width, height, x, y, squares, ...props }: any) {
@@ -88,20 +98,24 @@ const Grid = ({ pattern, size }: { pattern?: number[][]; size?: number }) => {
   );
 };
 
-export default function SMSPage() {
+export default function EmailPage() {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  // Single SMS state
-  const [phoneNumber, setPhoneNumber] = useState('');
+  // Single Email state
+  const [email, setEmail] = useState('');
+  const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const [isHtml, setIsHtml] = useState(false);
 
-  // Bulk SMS state
-  const [phoneNumbers, setPhoneNumbers] = useState('');
+  // Bulk Email state
+  const [emails, setEmails] = useState('');
+  const [bulkSubject, setBulkSubject] = useState('');
   const [bulkMessage, setBulkMessage] = useState('');
+  const [bulkIsHtml, setBulkIsHtml] = useState(false);
 
   useEffect(() => {
     fetchProjects();
@@ -110,18 +124,24 @@ export default function SMSPage() {
   const fetchProjects = async () => {
     try {
       const response = await api.get('/api/projects');
-      setProjects(response.data.projects || []);
-      if (response.data.projects?.length > 0) {
-        setSelectedProject(response.data.projects[0]._id);
+    //   console.log('Projects response:', response.data);
+      const allProjects = response.data.payload?.projects || response.data.projects || [];
+    //   console.log('All projects:', allProjects);
+      // Filter projects with custom SMTP configuration
+      const emailProjects = allProjects.filter((p: Project) => p.settings?.email?.smtp?.host);
+    //   console.log('Email projects with SMTP:', emailProjects);
+      setProjects(emailProjects);
+      if (emailProjects.length > 0) {
+        setSelectedProject(emailProjects[0]._id);
       }
     } catch (error) {
       console.error('Failed to fetch projects:', error);
     }
   };
 
-  const sendSingleSMS = async (e: React.FormEvent) => {
+  const sendSingleEmail = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProject || !phoneNumber || !message) return;
+    if (!selectedProject || !email || !subject || !message) return;
 
     setLoading(true);
     setResult(null);
@@ -135,27 +155,29 @@ export default function SMSPage() {
       }
       
       const response = await api.post(
-        '/api/send_sms',
-        { phoneNumber, message },
+        '/api/send_email',
+        { email, subject, message, isHtml },
         { headers: { 'X-API-Key': project.apiKey } }
       );
       
       setResult({ success: true, data: response.data });
-      setPhoneNumber('');
+      setEmail('');
+      setSubject('');
       setMessage('');
+      setIsHtml(false);
     } catch (error: any) {
       setResult({ 
         success: false, 
-        error: error.response?.data?.error || error.response?.data?.message || 'Failed to send SMS' 
+        error: error.response?.data?.error || error.response?.data?.message || 'Failed to send email' 
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const sendBulkSMS = async (e: React.FormEvent) => {
+  const sendBulkEmail = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProject || !phoneNumbers || !bulkMessage) return;
+    if (!selectedProject || !emails || !bulkSubject || !bulkMessage) return;
 
     setLoading(true);
     setResult(null);
@@ -168,29 +190,27 @@ export default function SMSPage() {
         return;
       }
       
-      const numbersArray = phoneNumbers.split('\n').map(n => n.trim()).filter(n => n);
+      const emailsArray = emails.split('\n').map(e => e.trim()).filter(e => e);
       
       const response = await api.post(
-        '/api/send_bulk_sms',
-        { phoneNumbers: numbersArray, message: bulkMessage },
+        '/api/send_bulk_email',
+        { emails: emailsArray, subject: bulkSubject, message: bulkMessage, isHtml: bulkIsHtml },
         { headers: { 'X-API-Key': project.apiKey } }
       );
       
       setResult({ success: true, data: response.data });
-      setPhoneNumbers('');
+      setEmails('');
+      setBulkSubject('');
       setBulkMessage('');
+      setBulkIsHtml(false);
     } catch (error: any) {
       setResult({ 
         success: false, 
-        error: error.response?.data?.error || error.response?.data?.message || 'Failed to send bulk SMS' 
+        error: error.response?.data?.error || error.response?.data?.message || 'Failed to send bulk email' 
       });
     } finally {
       setLoading(false);
     }
-  };
-
-  const calculateCredits = (text: string) => {
-    return Math.ceil(text.length / 160);
   };
 
   return (
@@ -199,46 +219,31 @@ export default function SMSPage() {
       
       <div className="relative z-10 mx-auto max-w-7xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Send SMS</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Send Email</h1>
           <p className="text-muted-foreground mt-2">
-            Send SMS messages to your users instantly
+            Send emails to your users using custom SMTP
           </p>
         </div>
 
-        {/* OTP Notice */}
-        <Card className="mb-6 border-blue-500 bg-blue-50 dark:bg-blue-950">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <HugeiconsIcon 
-                icon={InformationCircleIcon} 
-                className="h-6 w-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
-              />
-              <div className="flex-1">
-                <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                  Need OTP (One-Time Password) for authentication?
-                </h3>
-                <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
-                  If you're implementing OTP features for user authentication or verification, we recommend using our dedicated OTP service instead of this SMS page. Our OTP feature includes automatic code generation, expiry management, and verification endpoints.
-                </p>
-                <Link href="/developer">
-                  <Button variant="outline" size="sm" className="border-blue-600 text-blue-600 hover:bg-blue-100 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-900">
-                    Go to OTP Feature
-                    <HugeiconsIcon icon={ArrowRight01Icon} className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {projects.length === 0 && (
+          <Card className="mb-6 border-amber-500">
+            <CardHeader>
+              <CardTitle className="text-amber-600">Custom SMTP Required</CardTitle>
+              <CardDescription>
+                Email sending requires custom SMTP configuration. Please configure SMTP settings in your project settings first.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
 
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Left Column - SMS Sending Interface */}
+          {/* Left Column - Email Sending Interface */}
           <div className="space-y-6">
             {/* Project Selector */}
             <Card>
               <CardHeader>
                 <CardTitle>Select Project</CardTitle>
-                <CardDescription>Choose which project to send SMS from</CardDescription>
+                <CardDescription>Choose which project to send email from (SMTP configured projects only)</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-4">
@@ -246,6 +251,7 @@ export default function SMSPage() {
                     value={selectedProject}
                     onChange={(e) => setSelectedProject(e.target.value)}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                    disabled={projects.length === 0}
                   >
                     <option value="">Select a project</option>
                     {projects.map((project) => (
@@ -274,7 +280,7 @@ export default function SMSPage() {
                       icon={result.success ? CheckmarkCircle01Icon : Cancel01Icon}
                       className={result.success ? 'text-green-500' : 'text-red-500'}
                     />
-                    {result.success ? 'SMS Sent Successfully' : 'Failed to Send SMS'}
+                    {result.success ? 'Email Sent Successfully' : 'Failed to Send Email'}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -290,11 +296,6 @@ export default function SMSPage() {
                           <Badge variant="secondary">Credits Used: {result.data.creditsUsed}</Badge>
                         </div>
                       )}
-                      {result.data.campaignId && (
-                        <p className="text-xs text-muted-foreground">
-                          Campaign ID: {result.data.campaignId}
-                        </p>
-                      )}
                     </div>
                   ) : (
                     <p className="text-sm text-red-500">{result.error}</p>
@@ -303,41 +304,52 @@ export default function SMSPage() {
               </Card>
             )}
 
-            {/* SMS Tabs */}
+            {/* Email Tabs */}
             <Tabs defaultValue="single" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="single" className="flex items-center gap-2">
-                  <HugeiconsIcon icon={Message01Icon} className="h-4 w-4" />
-                  Single SMS
+                  <HugeiconsIcon icon={Mail01Icon} className="h-4 w-4" />
+                  Single Email
                 </TabsTrigger>
                 <TabsTrigger value="bulk" className="flex items-center gap-2">
                   <HugeiconsIcon icon={UserMultiple02Icon} className="h-4 w-4" />
-                  Bulk SMS
+                  Bulk Email
                 </TabsTrigger>
               </TabsList>
 
-              {/* Single SMS Tab */}
+              {/* Single Email Tab */}
               <TabsContent value="single">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Send Single SMS</CardTitle>
-                    <CardDescription>Send SMS to a single phone number</CardDescription>
+                    <CardTitle>Send Single Email</CardTitle>
+                    <CardDescription>Send email to a single recipient</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form onSubmit={sendSingleSMS} className="space-y-4">
+                    <form onSubmit={sendSingleEmail} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="phoneNumber">Phone Number</Label>
+                        <Label htmlFor="email">Email Address</Label>
                         <Input
-                          id="phoneNumber"
-                          type="tel"
-                          placeholder="233241234567"
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          id="email"
+                          type="email"
+                          placeholder="user@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
                           required
                         />
                         <p className="text-xs text-muted-foreground">
-                          Enter phone number with country code (e.g., 233241234567)
+                          Enter recipient's email address
                         </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="subject">Subject</Label>
+                        <Input
+                          id="subject"
+                          placeholder="Enter email subject..."
+                          value={subject}
+                          onChange={(e) => setSubject(e.target.value)}
+                          required
+                        />
                       </div>
 
                       <div className="space-y-2">
@@ -347,53 +359,77 @@ export default function SMSPage() {
                           placeholder="Enter your message..."
                           value={message}
                           onChange={(e) => setMessage(e.target.value)}
-                          rows={5}
-                          maxLength={1600}
+                          rows={8}
+                          maxLength={10000}
                           required
                         />
                         <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{message.length} / 1600 characters</span>
-                          <span>{calculateCredits(message)} credit{calculateCredits(message) !== 1 ? 's' : ''} required</span>
+                          <span>{message.length} / 10,000 characters</span>
+                          <span>1 credit required</span>
                         </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="isHtml"
+                          checked={isHtml}
+                          onChange={(e) => setIsHtml(e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                        <Label htmlFor="isHtml" className="text-sm font-normal cursor-pointer">
+                          Send as HTML (message contains HTML markup)
+                        </Label>
                       </div>
 
                       <Button
                         type="submit"
-                        disabled={loading || !selectedProject}
+                        disabled={loading || !selectedProject || projects.length === 0}
                         className="w-full"
                       >
-                        {loading ? 'Sending...' : 'Send SMS'}
+                        {loading ? 'Sending...' : 'Send Email'}
                       </Button>
                     </form>
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              {/* Bulk SMS Tab */}
+              {/* Bulk Email Tab */}
               <TabsContent value="bulk">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Send Bulk SMS</CardTitle>
-                    <CardDescription>Send SMS to multiple recipients at once</CardDescription>
+                    <CardTitle>Send Bulk Email</CardTitle>
+                    <CardDescription>Send email to multiple recipients at once</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form onSubmit={sendBulkSMS} className="space-y-4">
+                    <form onSubmit={sendBulkEmail} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="phoneNumbers">Phone Numbers</Label>
+                        <Label htmlFor="emails">Email Addresses</Label>
                         <Textarea
-                          id="phoneNumbers"
-                          placeholder="233241234567&#10;233201234567&#10;233551234567"
-                          value={phoneNumbers}
-                          onChange={(e) => setPhoneNumbers(e.target.value)}
+                          id="emails"
+                          placeholder="user@example.com&#10;john@company.com&#10;jane@email.com"
+                          value={emails}
+                          onChange={(e) => setEmails(e.target.value)}
                           rows={8}
                           required
                         />
                         <p className="text-xs text-muted-foreground">
-                          Enter one phone number per line (max 1000 numbers)
+                          Enter one email address per line (max 1000 emails)
                         </p>
                         <p className="text-xs font-medium">
-                          {phoneNumbers.split('\n').filter(n => n.trim()).length} numbers
+                          {emails.split('\n').filter(e => e.trim()).length} emails
                         </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="bulkSubject">Subject</Label>
+                        <Input
+                          id="bulkSubject"
+                          placeholder="Enter email subject..."
+                          value={bulkSubject}
+                          onChange={(e) => setBulkSubject(e.target.value)}
+                          required
+                        />
                       </div>
 
                       <div className="space-y-2">
@@ -403,24 +439,37 @@ export default function SMSPage() {
                           placeholder="Enter your message..."
                           value={bulkMessage}
                           onChange={(e) => setBulkMessage(e.target.value)}
-                          rows={5}
-                          maxLength={1600}
+                          rows={8}
+                          maxLength={10000}
                           required
                         />
                         <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{bulkMessage.length} / 1600 characters</span>
+                          <span>{bulkMessage.length} / 10,000 characters</span>
                           <span>
-                            {calculateCredits(bulkMessage) * phoneNumbers.split('\n').filter(n => n.trim()).length} total credits required
+                            {emails.split('\n').filter(e => e.trim()).length} total credits required
                           </span>
                         </div>
                       </div>
 
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="bulkIsHtml"
+                          checked={bulkIsHtml}
+                          onChange={(e) => setBulkIsHtml(e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                        <Label htmlFor="bulkIsHtml" className="text-sm font-normal cursor-pointer">
+                          Send as HTML (message contains HTML markup)
+                        </Label>
+                      </div>
+
                       <Button
                         type="submit"
-                        disabled={loading || !selectedProject}
+                        disabled={loading || !selectedProject || projects.length === 0}
                         className="w-full"
                       >
-                        {loading ? 'Sending...' : 'Send Bulk SMS'}
+                        {loading ? 'Sending...' : 'Send Bulk Email'}
                       </Button>
                     </form>
                   </CardContent>
@@ -434,18 +483,18 @@ export default function SMSPage() {
             <Card>
               <CardHeader>
                 <CardTitle>API Documentation</CardTitle>
-                <CardDescription>Integrate SMS sending into your application</CardDescription>
+                <CardDescription>Integrate email sending into your application</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Send Single SMS */}
+                {/* Send Single Email */}
                 <div>
-                  <h3 className="text-sm font-semibold mb-3">Send Single SMS</h3>
+                  <h3 className="text-sm font-semibold mb-3">Send Single Email</h3>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Send SMS to a single phone number. Costs 1 credit per 160 characters.
+                    Send email to a single recipient. Costs 1 credit per email.
                   </p>
                   <div className="bg-zinc-950 rounded-lg p-4 overflow-x-auto">
                     <pre className="text-xs text-zinc-100">
-{`POST ${process.env.NEXT_PUBLIC_API_URL || 'https://api.gatekeeperpro.live'}/api/send_sms
+{`POST ${process.env.NEXT_PUBLIC_API_URL || 'https://api.gatekeeperpro.live'}/api/send_email
 
 Headers:
   X-API-Key: YOUR_API_KEY
@@ -453,8 +502,10 @@ Headers:
 
 Body:
 {
-  "phoneNumber": "233241234567",
-  "message": "Your message here"
+  "email": "user@example.com",
+  "subject": "Your subject here",
+  "message": "Your message here",
+  "isHtml": false
 }`}
                     </pre>
                   </div>
@@ -463,22 +514,28 @@ Body:
                     <pre className="text-xs text-muted-foreground">
 {`{
   "success": true,
-  "message": "SMS sent successfully",
+  "message": "Email sent successfully",
   "creditsUsed": 1
 }`}
                     </pre>
                   </div>
+                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                    <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-2">Note:</p>
+                    <p className="text-xs text-blue-800 dark:text-blue-200">
+                      Set <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">isHtml: true</code> to send HTML formatted emails. When false or omitted, sends as plain text.
+                    </p>
+                  </div>
                 </div>
 
-                {/* Send Bulk SMS */}
+                {/* Send Bulk Email */}
                 <div className="border-t pt-6">
-                  <h3 className="text-sm font-semibold mb-3">Send Bulk SMS</h3>
+                  <h3 className="text-sm font-semibold mb-3">Send Bulk Email</h3>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Send SMS to multiple recipients at once (max 1000 numbers).
+                    Send email to multiple recipients at once (max 1000 emails).
                   </p>
                   <div className="bg-zinc-950 rounded-lg p-4 overflow-x-auto">
                     <pre className="text-xs text-zinc-100">
-{`POST ${process.env.NEXT_PUBLIC_API_URL || 'https://api.gatekeeperpro.live'}/api/send_bulk_sms
+{`POST ${process.env.NEXT_PUBLIC_API_URL || 'https://api.gatekeeperpro.live'}/api/send_bulk_email
 
 Headers:
   X-API-Key: YOUR_API_KEY
@@ -486,12 +543,14 @@ Headers:
 
 Body:
 {
-  "phoneNumbers": [
-    "233241234567",
-    "233201234567",
-    "233551234567"
+  "emails": [
+    "user@example.com",
+    "john@company.com",
+    "jane@email.com"
   ],
-  "message": "Your message here"
+  "subject": "Your subject here",
+  "message": "Your message here",
+  "isHtml": false
 }`}
                     </pre>
                   </div>
@@ -500,7 +559,7 @@ Body:
                     <pre className="text-xs text-muted-foreground">
 {`{
   "success": true,
-  "message": "Bulk SMS sent",
+  "message": "Bulk email sent",
   "sentCount": 3,
   "failedCount": 0,
   "creditsUsed": 3
@@ -515,19 +574,26 @@ Body:
                   <div className="space-y-2 text-sm">
                     <div className="flex items-start gap-2">
                       <Badge variant="secondary" className="text-xs">1 credit</Badge>
-                      <span className="text-muted-foreground">Up to 160 characters</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Badge variant="secondary" className="text-xs">2 credits</Badge>
-                      <span className="text-muted-foreground">161-320 characters</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Badge variant="secondary" className="text-xs">3 credits</Badge>
-                      <span className="text-muted-foreground">321-480 characters</span>
+                      <span className="text-muted-foreground">Per email sent</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      Formula: Math.ceil(messageLength / 160)
+                      Each email costs 1 credit regardless of message length.
                     </p>
+                  </div>
+                </div>
+
+                {/* Requirements */}
+                <div className="border-t pt-6">
+                  <h3 className="text-sm font-semibold mb-3">Requirements</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-start gap-2">
+                      <Badge variant="secondary" className="text-xs">SMTP</Badge>
+                      <span className="text-muted-foreground">Custom SMTP configuration required in project settings</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Badge variant="secondary" className="text-xs">Credits</Badge>
+                      <span className="text-muted-foreground">Sufficient credits in your account</span>
+                    </div>
                   </div>
                 </div>
 
@@ -553,7 +619,14 @@ Body:
                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">400</code>
                       <div>
                         <p className="font-medium">Invalid Request</p>
-                        <p className="text-muted-foreground text-xs">Check phone number format and message</p>
+                        <p className="text-muted-foreground text-xs">Check email format, subject, and message</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">500</code>
+                      <div>
+                        <p className="font-medium">SMTP Configuration Required</p>
+                        <p className="text-muted-foreground text-xs">Configure SMTP settings in project</p>
                       </div>
                     </div>
                   </div>
@@ -564,12 +637,14 @@ Body:
                   <h3 className="text-sm font-semibold mb-3">cURL Example</h3>
                   <div className="bg-zinc-950 rounded-lg p-4 overflow-x-auto">
                     <pre className="text-xs text-zinc-100">
-{`curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'https://api.gatekeeperpro.live'}/api/send_sms \\
+{`curl -X POST ${process.env.NEXT_PUBLIC_API_URL || 'https://api.gatekeeperpro.live'}/api/send_email \\
   -H "X-API-Key: YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "phoneNumber": "233241234567",
-    "message": "Hello from GateKeeperPro!"
+    "email": "user@example.com",
+    "subject": "Hello from GateKeeperPro",
+    "message": "This is a test email!",
+    "isHtml": false
   }'`}
                     </pre>
                   </div>

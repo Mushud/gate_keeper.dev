@@ -1,15 +1,32 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useId } from 'react';
-import { useAuth } from '@/lib/auth';
-import api from '@/lib/api';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Add01Icon, Edit02Icon, Delete01Icon, Copy01Icon, EyeIcon, EyeFreeIcons, Refresh01Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { CardSkeleton } from '@/components/ui/skeleton';
+import { useState, useEffect, useId } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth";
+import api from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Add01Icon,
+  Edit02Icon,
+  Delete01Icon,
+  Copy01Icon,
+  EyeIcon,
+  EyeFreeIcons,
+  Refresh01Icon,
+  Settings01Icon,
+  Tick02Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { CardSkeleton } from "@/components/ui/skeleton";
 
 interface Project {
   _id: string;
@@ -20,6 +37,24 @@ interface Project {
   createdAt: string;
   apiKey?: string;
   services?: string[];
+}
+
+interface ProjectSettings {
+  sms: {
+    customMessage: string;
+    enabled: boolean;
+  };
+  email: {
+    smtp: {
+      host: string;
+      port: number;
+      secure: boolean;
+      user: string;
+      password: string;
+      fromAddress: string;
+    };
+    enabled: boolean;
+  };
 }
 
 // Simple in-memory cache for projects
@@ -68,13 +103,7 @@ function GridPattern({ width, height, x, y, squares, ...props }: any) {
   );
 }
 
-const Grid = ({
-  pattern,
-  size,
-}: {
-  pattern?: number[][];
-  size?: number;
-}) => {
+const Grid = ({ pattern, size }: { pattern?: number[][]; size?: number }) => {
   const p = pattern ?? [
     [Math.floor(Math.random() * 4) + 7, Math.floor(Math.random() * 6) + 1],
     [Math.floor(Math.random() * 4) + 7, Math.floor(Math.random() * 6) + 1],
@@ -99,22 +128,46 @@ const Grid = ({
 };
 
 export default function ProjectsPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showApiKey, setShowApiKey] = useState<string | null>(null);
-  const [visibleApiKeys, setVisibleApiKeys] = useState<{ [key: string]: boolean }>({});
-  const [formData, setFormData] = useState({ name: '', senderID: '' });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [newApiKey, setNewApiKey] = useState('');
+  const [visibleApiKeys, setVisibleApiKeys] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [formData, setFormData] = useState({ name: "", senderID: "" });
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [newApiKey, setNewApiKey] = useState("");
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settings, setSettings] = useState<ProjectSettings>({
+    sms: {
+      customMessage:
+        "Your verification code is {code}. It expires in {expiry} minutes.",
+      enabled: true,
+    },
+    email: {
+      smtp: {
+        host: "",
+        port: 587,
+        secure: true,
+        user: "",
+        password: "",
+        fromAddress: "",
+      },
+      enabled: false,
+    },
+  });
 
   const toggleApiKeyVisibility = (projectId: string) => {
-    setVisibleApiKeys(prev => ({
+    setVisibleApiKeys((prev) => ({
       ...prev,
-      [projectId]: !prev[projectId]
+      [projectId]: !prev[projectId],
     }));
   };
 
@@ -131,18 +184,19 @@ export default function ProjectsPage() {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/projects');
-      console.log('Projects API Response:', response.data);
-      const projectsData = response.data.payload?.projects || response.data.projects || [];
-      console.log('Extracted projects:', projectsData);
+      const response = await api.get("/api/projects");
+      console.log("Projects API Response:", response.data);
+      const projectsData =
+        response.data.payload?.projects || response.data.projects || [];
+      console.log("Extracted projects:", projectsData);
       setProjects(projectsData);
-      
+
       // Update cache
       projectsCache = projectsData;
       cacheTimestamp = Date.now();
     } catch (err: any) {
-      console.error('Failed to fetch projects:', err);
-      setError('Failed to load projects');
+      console.error("Failed to fetch projects:", err);
+      setError("Failed to load projects");
     } finally {
       setLoading(false);
     }
@@ -150,88 +204,143 @@ export default function ProjectsPage() {
 
   const handleCreateProject = async () => {
     if (!formData.name || !formData.senderID) {
-      setError('Please fill in all fields');
+      setError("Please fill in all fields");
       return;
     }
 
     try {
       setCreating(true);
-      setError('');
-      const response = await api.post('/api/create_project', {
+      setError("");
+      const response = await api.post("/api/create_project", {
         name: formData.name,
         senderID: formData.senderID,
         account: user?._id,
       });
-      
+
       if (response.data.apiKey) {
         setNewApiKey(response.data.apiKey);
       }
-      
-      setSuccess('Project created successfully!');
-      setFormData({ name: '', senderID: '' });
+
+      setSuccess("Project created successfully!");
+      setFormData({ name: "", senderID: "" });
       // Invalidate cache to fetch fresh data
       projectsCache = null;
       cacheTimestamp = 0;
       fetchProjects();
-      
+
       // Don't clear the modal or success message - let user copy the API key
       // Clear success message after 3 seconds only if no API key shown
       if (!response.data.apiKey) {
         setTimeout(() => {
-          setSuccess('');
+          setSuccess("");
           setShowCreateModal(false);
         }, 3000);
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create project');
+      setError(err.response?.data?.error || "Failed to create project");
     } finally {
       setCreating(false);
     }
   };
 
   const handleDeleteProject = async (projectId: string) => {
-    if (!confirm('Are you sure you want to delete this project?')) return;
+    if (!confirm("Are you sure you want to delete this project?")) return;
 
     try {
       await api.delete(`/api/project/${projectId}`);
-      setSuccess('Project deleted successfully');
+      setSuccess("Project deleted successfully");
       // Invalidate cache to fetch fresh data
       projectsCache = null;
       cacheTimestamp = 0;
       fetchProjects();
-      setTimeout(() => setSuccess(''), 2000);
+      setTimeout(() => setSuccess(""), 2000);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to delete project');
+      setError(err.response?.data?.error || "Failed to delete project");
     }
   };
 
   const handleRegenerateKey = async (projectId: string) => {
-    if (!confirm('Are you sure? This will invalidate the current API key.')) return;
+    if (!confirm("Are you sure? This will invalidate the current API key."))
+      return;
 
     try {
-      const response = await api.post(`/api/project/${projectId}/regenerate-key`);
+      const response = await api.post(
+        `/api/project/${projectId}/regenerate-key`
+      );
       if (response.data.apiKey) {
         setNewApiKey(response.data.apiKey);
         setShowApiKey(projectId);
       }
-      setSuccess('API key regenerated successfully');
-      setTimeout(() => setSuccess(''), 3000);
+      setSuccess("API key regenerated successfully");
+      setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to regenerate API key');
+      setError(err.response?.data?.error || "Failed to regenerate API key");
     }
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    setSuccess('Copied to clipboard!');
-    setTimeout(() => setSuccess(''), 2000);
+    setSuccess("Copied to clipboard!");
+    setTimeout(() => setSuccess(""), 2000);
+  };
+
+  const handleOpenSettings = async (project: Project) => {
+    setSelectedProject(project);
+    setShowSettingsModal(true);
+
+    try {
+      const response = await api.get(`/api/project/${project._id}/settings`);
+      if (response.data.settings) {
+        setSettings(response.data.settings);
+      }
+    } catch (error: any) {
+      console.error("Failed to fetch settings:", error);
+      setError(error.response?.data?.message || "Failed to load settings");
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    if (!selectedProject) return;
+
+    try {
+      setSavingSettings(true);
+
+      // Validate SMS message contains {code}
+      if (!settings.sms.customMessage.includes("{code}")) {
+        setError("SMS message must contain {code} placeholder");
+        return;
+      }
+      
+      // Validate SMS message length (160 characters max)
+      if (settings.sms.customMessage.length > 160) {
+        setError("SMS message cannot exceed 160 characters");
+        return;
+      }
+
+      await api.put(`/api/project/${selectedProject._id}/settings`, settings);
+
+      setSuccess("Settings updated successfully");
+      setSuccess("");
+      setShowSettingsModal(false);
+    } catch (error: any) {
+      console.error("Failed to save settings:", error);
+      setError(error.response?.data?.error || "Failed to save settings");
+    } finally {
+      setSavingSettings(false);
+    }
   };
 
   const closeModal = () => {
     setShowCreateModal(false);
-    setNewApiKey('');
-    setFormData({ name: '', senderID: '' });
-    setError('');
+    setNewApiKey("");
+    setFormData({ name: "", senderID: "" });
+    setError("");
+  };
+
+  const closeSettingsModal = () => {
+    setShowSettingsModal(false);
+    setSelectedProject(null);
+    setError("");
   };
 
   return (
@@ -239,16 +348,29 @@ export default function ProjectsPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-zinc-900">Projects</h1>
-          <p className="text-zinc-600 mt-1">Manage your OTP projects and API keys</p>
+          <p className="text-zinc-600 mt-1">
+            Manage your OTP projects and API keys
+          </p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
-          <HugeiconsIcon icon={Add01Icon} size={18} strokeWidth={1.5} className="mr-2" />
+          <HugeiconsIcon
+            icon={Add01Icon}
+            size={18}
+            strokeWidth={1.5}
+            className="mr-2"
+          />
           Create Project
         </Button>
       </div>
 
       {(error || success) && (
-        <div className={`mb-6 p-4 rounded-lg ${error ? 'bg-red-50 text-red-800 border border-red-200' : 'bg-green-50 text-green-800 border border-green-200'}`}>
+        <div
+          className={`mb-6 p-4 rounded-lg ${
+            error
+              ? "bg-red-50 text-red-800 border border-red-200"
+              : "bg-green-50 text-green-800 border border-green-200"
+          }`}
+        >
           {error || success}
         </div>
       )}
@@ -265,7 +387,12 @@ export default function ProjectsPage() {
           <div className="col-span-full text-center py-12">
             <p className="text-zinc-600 mb-4">No projects yet</p>
             <Button onClick={() => setShowCreateModal(true)}>
-              <HugeiconsIcon icon={Add01Icon} size={18} strokeWidth={1.5} className="mr-2" />
+              <HugeiconsIcon
+                icon={Add01Icon}
+                size={18}
+                strokeWidth={1.5}
+                className="mr-2"
+              />
               Create Your First Project
             </Button>
           </div>
@@ -276,21 +403,42 @@ export default function ProjectsPage() {
               <table className="w-full">
                 <thead className="border-b bg-zinc-50">
                   <tr>
-                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">Project Name</th>
-                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">Sender ID</th>
-                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">Services</th>
-                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">API Key</th>
-                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">Status</th>
-                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">Created</th>
-                    <th className="text-right p-4 font-semibold text-sm text-zinc-700">Actions</th>
+                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">
+                      Project Name
+                    </th>
+                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">
+                      Sender ID
+                    </th>
+                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">
+                      Services
+                    </th>
+                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">
+                      API Key
+                    </th>
+                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">
+                      Status
+                    </th>
+                    <th className="text-left p-4 font-semibold text-sm text-zinc-700">
+                      Created
+                    </th>
+                    <th className="text-right p-4 font-semibold text-sm text-zinc-700">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {projects.map((project) => (
-                    <tr key={project._id} className="border-b last:border-0 hover:bg-zinc-50 transition-colors">
+                    <tr
+                      key={project._id}
+                      className="border-b last:border-0 hover:bg-zinc-50 transition-colors"
+                    >
                       <td className="p-4">
-                        <div className="font-medium text-zinc-900">{project.name}</div>
-                        <div className="text-xs text-zinc-500 mt-0.5">{project.projectID || project._id}</div>
+                        <div className="font-medium text-zinc-900">
+                          {project.name}
+                        </div>
+                        <div className="text-xs text-zinc-500 mt-0.5">
+                          {project.projectID || project._id}
+                        </div>
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-sm font-medium">
@@ -299,30 +447,41 @@ export default function ProjectsPage() {
                       </td>
                       <td className="p-4">
                         <div className="flex flex-wrap gap-1.5 max-w-sm">
-                          {(project.services && project.services.length > 0) ? (
+                          {project.services && project.services.length > 0 ? (
                             project.services.map((service) => {
                               // Color coding based on service type
                               const getServiceStyle = (svc: string) => {
-                                if (svc === 'otp') return 'bg-blue-100 text-blue-700';
-                                if (svc === 'sms') return 'bg-purple-100 text-purple-700';
-                                if (svc === 'campaign') return 'bg-pink-100 text-pink-700';
-                                if (svc === 'checkout') return 'bg-orange-100 text-orange-700';
-                                if (svc.startsWith('kyc_')) return 'bg-green-100 text-green-700';
-                                return 'bg-zinc-100 text-zinc-700';
+                                if (svc === "otp")
+                                  return "bg-blue-100 text-blue-700";
+                                if (svc === "sms")
+                                  return "bg-purple-100 text-purple-700";
+                                if (svc === "campaign")
+                                  return "bg-pink-100 text-pink-700";
+                                if (svc === "checkout")
+                                  return "bg-orange-100 text-orange-700";
+                                if (svc.startsWith("kyc_"))
+                                  return "bg-green-100 text-green-700";
+                                return "bg-zinc-100 text-zinc-700";
                               };
 
                               const formatServiceName = (svc: string) => {
                                 return svc
-                                  .replace('kyc_', 'KYC: ')
-                                  .split('_')
-                                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                                  .join(' ');
+                                  .replace("kyc_", "KYC: ")
+                                  .split("_")
+                                  .map(
+                                    (word) =>
+                                      word.charAt(0).toUpperCase() +
+                                      word.slice(1)
+                                  )
+                                  .join(" ");
                               };
 
                               return (
                                 <span
                                   key={service}
-                                  className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${getServiceStyle(service)}`}
+                                  className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${getServiceStyle(
+                                    service
+                                  )}`}
                                   title={`${service} service enabled`}
                                 >
                                   {formatServiceName(service)}
@@ -331,13 +490,25 @@ export default function ProjectsPage() {
                             })
                           ) : (
                             <div className="text-xs space-y-1">
-                              <div className="text-zinc-500 font-medium">Default Services:</div>
+                              <div className="text-zinc-500 font-medium">
+                                Default Services:
+                              </div>
                               <div className="flex flex-wrap gap-1">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-blue-50 text-blue-600">OTP</span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-purple-50 text-purple-600">SMS</span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-pink-50 text-pink-600">Campaign</span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-green-50 text-green-600">KYC: Phone</span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-orange-50 text-orange-600">Checkout</span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-blue-50 text-blue-600">
+                                  OTP
+                                </span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-purple-50 text-purple-600">
+                                  SMS
+                                </span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-pink-50 text-pink-600">
+                                  Campaign
+                                </span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-green-50 text-green-600">
+                                  KYC: Phone
+                                </span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-orange-50 text-orange-600">
+                                  Checkout
+                                </span>
                               </div>
                             </div>
                           )}
@@ -349,33 +520,47 @@ export default function ProjectsPage() {
                             {project.apiKey ? (
                               <>
                                 <code className="flex-1 text-xs bg-zinc-100 p-2 rounded font-mono truncate">
-                                  {visibleApiKeys[project._id] 
-                                    ? project.apiKey 
-                                    : '•'.repeat(40)}
+                                  {visibleApiKeys[project._id]
+                                    ? project.apiKey
+                                    : "•".repeat(40)}
                                 </code>
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => toggleApiKeyVisibility(project._id)}
+                                  onClick={() =>
+                                    toggleApiKeyVisibility(project._id)
+                                  }
                                   className="shrink-0"
                                 >
-                                  <HugeiconsIcon 
-                                    icon={visibleApiKeys[project._id] ? EyeFreeIcons : EyeIcon} 
-                                    size={16} 
-                                    strokeWidth={1.5} 
+                                  <HugeiconsIcon
+                                    icon={
+                                      visibleApiKeys[project._id]
+                                        ? EyeFreeIcons
+                                        : EyeIcon
+                                    }
+                                    size={16}
+                                    strokeWidth={1.5}
                                   />
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => copyToClipboard(project.apiKey!)}
+                                  onClick={() =>
+                                    copyToClipboard(project.apiKey!)
+                                  }
                                   className="shrink-0"
                                 >
-                                  <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
+                                  <HugeiconsIcon
+                                    icon={Copy01Icon}
+                                    size={16}
+                                    strokeWidth={1.5}
+                                  />
                                 </Button>
                               </>
                             ) : (
-                              <span className="text-xs text-zinc-400">No key available</span>
+                              <span className="text-xs text-zinc-400">
+                                No key available
+                              </span>
                             )}
                           </div>
                           {showApiKey === project._id && newApiKey && (
@@ -390,7 +575,11 @@ export default function ProjectsPage() {
                                   onClick={() => copyToClipboard(newApiKey)}
                                   className="shrink-0"
                                 >
-                                  <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
+                                  <HugeiconsIcon
+                                    icon={Copy01Icon}
+                                    size={16}
+                                    strokeWidth={1.5}
+                                  />
                                 </Button>
                               </div>
                               <p className="text-xs text-amber-700 font-medium">
@@ -401,11 +590,13 @@ export default function ProjectsPage() {
                         </div>
                       </td>
                       <td className="p-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                          project.status === 'active' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            project.status === "active"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
                           {project.status}
                         </span>
                       </td>
@@ -417,9 +608,27 @@ export default function ProjectsPage() {
                           <Button
                             size="sm"
                             variant="outline"
+                            onClick={() => handleOpenSettings(project)}
+                          >
+                            <HugeiconsIcon
+                              icon={Settings01Icon}
+                              size={14}
+                              strokeWidth={1.5}
+                              className="mr-1"
+                            />
+                            Settings
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => handleRegenerateKey(project._id)}
                           >
-                            <HugeiconsIcon icon={Refresh01Icon} size={14} strokeWidth={1.5} className="mr-1" />
+                            <HugeiconsIcon
+                              icon={Refresh01Icon}
+                              size={14}
+                              strokeWidth={1.5}
+                              className="mr-1"
+                            />
                             Regenerate
                           </Button>
                           <Button
@@ -427,7 +636,12 @@ export default function ProjectsPage() {
                             variant="ghost"
                             onClick={() => handleDeleteProject(project._id)}
                           >
-                            <HugeiconsIcon icon={Delete01Icon} size={16} strokeWidth={1.5} className="text-red-600" />
+                            <HugeiconsIcon
+                              icon={Delete01Icon}
+                              size={16}
+                              strokeWidth={1.5}
+                              className="text-red-600"
+                            />
                           </Button>
                         </div>
                       </td>
@@ -446,10 +660,12 @@ export default function ProjectsPage() {
           <Card className="w-full max-w-md">
             <CardHeader>
               <CardTitle>
-                {newApiKey ? 'Project Created!' : 'Create New Project'}
+                {newApiKey ? "Project Created!" : "Create New Project"}
               </CardTitle>
               <CardDescription>
-                {newApiKey ? 'Save your API key - it will only be shown once' : 'Set up a new OTP project'}
+                {newApiKey
+                  ? "Save your API key - it will only be shown once"
+                  : "Set up a new OTP project"}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -461,7 +677,9 @@ export default function ProjectsPage() {
                       id="name"
                       placeholder="My App"
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
                     />
                   </div>
 
@@ -472,7 +690,9 @@ export default function ProjectsPage() {
                       placeholder="MyCompany"
                       maxLength={11}
                       value={formData.senderID}
-                      onChange={(e) => setFormData({ ...formData, senderID: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, senderID: e.target.value })
+                      }
                     />
                     <p className="text-xs text-zinc-600">
                       This will appear in SMS messages sent to users
@@ -480,11 +700,20 @@ export default function ProjectsPage() {
                   </div>
 
                   <div className="flex gap-2 pt-4">
-                    <Button variant="outline" onClick={closeModal} className="flex-1" disabled={creating}>
+                    <Button
+                      variant="outline"
+                      onClick={closeModal}
+                      className="flex-1"
+                      disabled={creating}
+                    >
                       Cancel
                     </Button>
-                    <Button onClick={handleCreateProject} className="flex-1" disabled={creating}>
-                      {creating ? 'Creating...' : 'Create Project'}
+                    <Button
+                      onClick={handleCreateProject}
+                      className="flex-1"
+                      disabled={creating}
+                    >
+                      {creating ? "Creating..." : "Create Project"}
                     </Button>
                   </div>
                 </>
@@ -496,13 +725,19 @@ export default function ProjectsPage() {
                     </p>
                     <div className="bg-white p-3 rounded">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-zinc-700">API Key</span>
+                        <span className="text-xs font-semibold text-zinc-700">
+                          API Key
+                        </span>
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => copyToClipboard(newApiKey)}
                         >
-                          <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.5} />
+                          <HugeiconsIcon
+                            icon={Copy01Icon}
+                            size={16}
+                            strokeWidth={1.5}
+                          />
                         </Button>
                       </div>
                       <code className="text-xs bg-zinc-50 p-2 rounded block break-all">
@@ -510,7 +745,8 @@ export default function ProjectsPage() {
                       </code>
                     </div>
                     <p className="text-xs text-amber-700 mt-3">
-                      ⚠️ Important: Copy this API key now. You won't be able to see it again!
+                      ⚠️ Important: Copy this API key now. You won't be able to
+                      see it again!
                     </p>
                   </div>
 
@@ -519,6 +755,252 @@ export default function ProjectsPage() {
                   </Button>
                 </>
               )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettingsModal && selectedProject && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <Card className="w-full max-w-3xl my-8 max-h-[90vh] flex flex-col">
+            <CardHeader className="flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Project Settings</CardTitle>
+                  <CardDescription className="mt-1">
+                    {selectedProject.name}
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSaveSettings}
+                    disabled={savingSettings}
+                    size="sm"
+                  >
+                    <HugeiconsIcon
+                      icon={Tick02Icon}
+                      className="mr-2"
+                      size={16}
+                    />
+                    {savingSettings ? "Saving..." : "Save"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={closeSettingsModal}
+                    size="sm"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="flex-1 overflow-y-auto">
+              <div className="space-y-6">
+                {/* SMS Settings */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      SMS OTP Configuration
+                    </CardTitle>
+                    <CardDescription>
+                      Customize how OTP messages are sent via SMS. The{" "}
+                      {"{code}"} placeholder is required.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="smsMessage">Custom SMS Message</Label>
+                      <textarea
+                        id="smsMessage"
+                        placeholder="Your verification code is {code}. It expires in {expiry} minutes."
+                        value={settings.sms.customMessage}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            sms: {
+                              ...settings.sms,
+                              customMessage: e.target.value,
+                            },
+                          })
+                        }
+                        maxLength={160}
+                        rows={4}
+                        className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background font-mono"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Available placeholders: {"{code}"}, {"{expiry}"}. Maximum 160 characters ({settings.sms.customMessage.length}/160)
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Email Settings */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg">
+                          SMTP Configuration
+                        </CardTitle>
+                        <CardDescription>
+                          Configure your SMTP server for sending OTP emails
+                        </CardDescription>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open('https://www.google.com/search?q=how+to+get+SMTP+settings+gmail+zoho', '_blank')}
+                      >
+                        Get SMTP Help
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="smtpHost">SMTP Host</Label>
+                        <Input
+                          id="smtpHost"
+                          placeholder="smtp.example.com"
+                          value={settings.email.smtp.host}
+                          onChange={(e) =>
+                            setSettings({
+                              ...settings,
+                              email: {
+                                ...settings.email,
+                                smtp: {
+                                  ...settings.email.smtp,
+                                  host: e.target.value,
+                                },
+                              },
+                            })
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="smtpPort">SMTP Port</Label>
+                        <Input
+                          id="smtpPort"
+                          type="number"
+                          placeholder="587"
+                          value={settings.email.smtp.port}
+                          onChange={(e) =>
+                            setSettings({
+                              ...settings,
+                              email: {
+                                ...settings.email,
+                                smtp: {
+                                  ...settings.email.smtp,
+                                  port: parseInt(e.target.value) || 587,
+                                },
+                              },
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="smtpUser">SMTP Username</Label>
+                        <Input
+                          id="smtpUser"
+                          placeholder="user@example.com"
+                          value={settings.email.smtp.user}
+                          onChange={(e) =>
+                            setSettings({
+                              ...settings,
+                              email: {
+                                ...settings.email,
+                                smtp: {
+                                  ...settings.email.smtp,
+                                  user: e.target.value,
+                                },
+                              },
+                            })
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="smtpPassword">SMTP Password</Label>
+                        <Input
+                          id="smtpPassword"
+                          type="password"
+                          placeholder="••••••••"
+                          value={settings.email.smtp.password}
+                          onChange={(e) =>
+                            setSettings({
+                              ...settings,
+                              email: {
+                                ...settings.email,
+                                smtp: {
+                                  ...settings.email.smtp,
+                                  password: e.target.value,
+                                },
+                              },
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="fromAddress">From Email Address</Label>
+                      <Input
+                        id="fromAddress"
+                        placeholder="noreply@yourdomain.com (leave empty to use username)"
+                        value={settings.email.smtp.fromAddress}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            email: {
+                              ...settings.email,
+                              smtp: {
+                                ...settings.email.smtp,
+                                fromAddress: e.target.value,
+                              },
+                            },
+                          })
+                        }
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Optional: Specify a custom "From" address. If left empty, the SMTP username will be used.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="smtpSecure"
+                        checked={settings.email.smtp.secure}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            email: {
+                              ...settings.email,
+                              smtp: {
+                                ...settings.email.smtp,
+                                secure: e.target.checked,
+                              },
+                            },
+                          })
+                        }
+                        className="rounded border-gray-300"
+                      />
+                      <Label
+                        htmlFor="smtpSecure"
+                        className="font-normal cursor-pointer"
+                      >
+                        Use TLS/SSL
+                      </Label>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -40,6 +40,17 @@ interface Project {
   senderID: string;
   status: string;
   apiKey: string;
+  settings?: {
+    email?: {
+      smtp?: {
+        host?: string;
+        port?: number;
+        user?: string;
+        password?: string;
+        fromAddress?: string;
+      };
+    };
+  };
 }
 
 interface Campaign {
@@ -47,6 +58,7 @@ interface Campaign {
   name: string;
   description?: string;
   message: string;
+  subject?: string; // For email campaigns
   receivers: string[];
   status: 'pending' | 'sent' | 'failed' | 'processing';
   totalReceivers: number;
@@ -140,7 +152,7 @@ export default function CampaignsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
-  const [campaignFilter, setCampaignFilter] = useState<'all' | 'bulk' | 'single'>('all');
+  const [campaignFilter, setCampaignFilter] = useState<'all' | 'bulk' | 'single' | 'email'>('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Alert modal state
@@ -152,7 +164,9 @@ export default function CampaignsPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [message, setMessage] = useState('');
+  const [subject, setSubject] = useState('');
   const [receivers, setReceivers] = useState('');
+  const [campaignType, setCampaignType] = useState<'sms' | 'email'>('sms');
   
   // Show alert modal
   const showAlert = (message: string, type: 'success' | 'error' = 'success') => {
@@ -164,8 +178,9 @@ export default function CampaignsPage() {
   // Filter campaigns based on type
   const filteredCampaigns = campaigns.filter(campaign => {
     if (campaignFilter === 'all') return true;
-    if (campaignFilter === 'single') return campaign.name.startsWith('Single SMS -');
-    if (campaignFilter === 'bulk') return !campaign.name.startsWith('Single SMS -');
+    if (campaignFilter === 'email') return campaign.type === 'email';
+    if (campaignFilter === 'single') return campaign.name.startsWith('Single SMS -') && campaign.type !== 'email';
+    if (campaignFilter === 'bulk') return !campaign.name.startsWith('Single SMS -') && campaign.type !== 'email';
     return true;
   });
 
@@ -194,11 +209,24 @@ export default function CampaignsPage() {
     setLoading(true);
     try {
       console.log('Fetching all campaigns for account');
-      const response = await api.get('/api/account/campaigns');
-      console.log('Campaigns response:', response.data);
-      const campaignsData = response.data.payload?.campaigns || response.data.campaigns || [];
-      console.log('Extracted campaigns:', campaignsData);
-      setCampaigns(campaignsData);
+      
+      // Fetch both SMS and email campaigns
+      const [smsResponse, emailResponse] = await Promise.all([
+        api.get('/api/account/campaigns'),
+        api.get('/api/account/email_campaigns')
+      ]);
+      
+      const smsCampaigns = smsResponse.data.payload?.campaigns || smsResponse.data.campaigns || [];
+      const emailCampaigns = emailResponse.data.payload?.campaigns || emailResponse.data.campaigns || [];
+      
+      // Mark campaigns with their type for display
+      const allCampaigns = [
+        ...smsCampaigns.map((c: Campaign) => ({ ...c, type: 'sms' })),
+        ...emailCampaigns.map((c: Campaign) => ({ ...c, type: 'email' }))
+      ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      console.log('Total campaigns:', allCampaigns.length);
+      setCampaigns(allCampaigns);
     } catch (error) {
       console.error('Failed to fetch campaigns:', error);
     } finally {
@@ -239,6 +267,11 @@ export default function CampaignsPage() {
   const createCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProject || !name || !message || !receivers) return;
+    
+    if (campaignType === 'email' && !subject) {
+      showAlert('Email subject is required for email campaigns', 'error');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -252,35 +285,33 @@ export default function CampaignsPage() {
       // Use apiKey if available, otherwise use projectID
       const key = project.apiKey || project.projectID;
       
-      // Split by newlines, commas, or spaces, normalize phone numbers
+      // Split by newlines, commas, or spaces, normalize receivers
       const receiversArray = receivers
         .split(/[\n,\s]+/) // Split by newlines, commas, or spaces
         .map(n => n.trim())
         .filter(n => n)
         .map(n => {
-          // If number starts with 0, replace with 233
-          if (n.startsWith('0')) {
+          // For SMS: If number starts with 0, replace with 233
+          if (campaignType === 'sms' && n.startsWith('0')) {
             return '233' + n.substring(1);
           }
           return n;
         });
       
-      await api.post(
-        '/api/campaigns',
-        { 
-          name, 
-          description, 
-          message, 
-          receivers: receiversArray 
-        },
-        { headers: { key } }
-      );
+      const endpoint = campaignType === 'sms' ? '/api/campaigns' : '/api/email_campaigns';
+      const payload = campaignType === 'sms' 
+        ? { name, description, message, receivers: receiversArray }
+        : { name, description, subject, message, receivers: receiversArray };
+      
+      await api.post(endpoint, payload, { headers: { key } });
       
       setCreateDialogOpen(false);
       setName('');
       setDescription('');
       setMessage('');
+      setSubject('');
       setReceivers('');
+      setCampaignType('sms');
       fetchCampaigns();
       showAlert('Campaign created successfully!', 'success');
     } catch (error: any) {
@@ -297,8 +328,8 @@ export default function CampaignsPage() {
 
     setExecutingCampaignId(campaignId);
     try {
-      // Find the campaign to get its project
-      const campaign = campaigns.find(c => c._id === campaignId);
+      // Find the campaign to get its project and type
+      const campaign: any = campaigns.find(c => c._id === campaignId);
       if (!campaign?.project) {
         showAlert('Campaign project not found.', 'error');
         setExecutingCampaignId(null);
@@ -317,11 +348,11 @@ export default function CampaignsPage() {
       // Use apiKey if available, otherwise use projectID
       const key = project.apiKey || project.projectID;
       
-      await api.post(
-        `/api/campaigns/${campaignId}/execute`,
-        {},
-        { headers: { key } }
-      );
+      const endpoint = campaign.type === 'email' 
+        ? `/api/email_campaigns/${campaignId}/execute`
+        : `/api/campaigns/${campaignId}/execute`;
+      
+      await api.post(endpoint, {}, { headers: { key } });
       
       showAlert('Campaign execution started! The campaign will update automatically.', 'success');
       
@@ -512,6 +543,40 @@ export default function CampaignsPage() {
               </DialogHeader>
               <form onSubmit={createCampaign} className="space-y-4">
                 <div className="space-y-2">
+                  <Label>Campaign Type</Label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="campaignType"
+                        value="sms"
+                        checked={campaignType === 'sms'}
+                        onChange={(e) => setCampaignType(e.target.value as 'sms' | 'email')}
+                        className="h-4 w-4"
+                      />
+                      <span className="text-sm">SMS</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="campaignType"
+                        value="email"
+                        checked={campaignType === 'email'}
+                        onChange={(e) => setCampaignType(e.target.value as 'sms' | 'email')}
+                        className="h-4 w-4"
+                        disabled={!projects.some(p => p.settings?.email?.smtp?.host)}
+                      />
+                      <span className="text-sm">Email</span>
+                    </label>
+                  </div>
+                  {campaignType === 'email' && !projects.some(p => p.settings?.email?.smtp?.host) && (
+                    <p className="text-xs text-amber-600">
+                      Email campaigns require custom SMTP configuration. Please configure SMTP settings in a project first.
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="name">Campaign Name</Label>
                   <Input
                     id="name"
@@ -532,14 +597,23 @@ export default function CampaignsPage() {
                     required
                   >
                     <option value="">Select a project</option>
-                    {projects.map((project) => (
-                      <option key={project._id} value={project._id}>
-                        {project.name} - {project.senderID}
-                      </option>
-                    ))}
+                    {projects
+                      .filter(project => {
+                        if (campaignType === 'email') {
+                          return project.settings?.email?.smtp?.host;
+                        }
+                        return true;
+                      })
+                      .map((project) => (
+                        <option key={project._id} value={project._id}>
+                          {project.name} - {project.senderID}
+                        </option>
+                      ))}
                   </select>
                   <p className="text-xs text-muted-foreground">
-                    Choose which project to send this campaign from
+                    {campaignType === 'email' 
+                      ? 'Only projects with custom SMTP configuration are shown'
+                      : 'Choose which project to send this campaign from'}
                   </p>
                 </div>
 
@@ -553,14 +627,29 @@ export default function CampaignsPage() {
                   />
                 </div>
 
+                {campaignType === 'email' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="subject">Email Subject</Label>
+                    <Input
+                      id="subject"
+                      placeholder="Special Holiday Offers - Don't Miss Out!"
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      required
+                    />
+                  </div>
+                )}
+
                 <div className="space-y-2">
-                  <Label htmlFor="message">Message</Label>
+                  <Label htmlFor="message">{campaignType === 'email' ? 'Email Body' : 'SMS Message'}</Label>
                   <Textarea
                     id="message"
-                    placeholder="Hi [name], we have special offers just for you!"
+                    placeholder={campaignType === 'email' 
+                      ? "Dear [name],\n\nWe have special offers just for you! Click the link below to explore:\nhttps://example.com/offers"
+                      : "Hi [name], we have special offers just for you!"}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    rows={5}
+                    rows={campaignType === 'email' ? 8 : 5}
                     maxLength={1600}
                     required
                   />
@@ -571,7 +660,7 @@ export default function CampaignsPage() {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="receivers">Recipients</Label>
+                    <Label htmlFor="receivers">{campaignType === 'email' ? 'Email Recipients' : 'Phone Recipients'}</Label>
                     <div className="flex gap-2">
                       <Button
                         type="button"
@@ -602,14 +691,18 @@ export default function CampaignsPage() {
                   </div>
                   <Textarea
                     id="receivers"
-                    placeholder="0548215801 0241234567 233201234567&#10;0551234567, 0241112233"
+                    placeholder={campaignType === 'email'
+                      ? "user@example.com&#10;john.doe@company.com&#10;jane@email.com"
+                      : "0548215801 0241234567 233201234567&#10;0551234567, 0241112233"}
                     value={receivers}
                     onChange={(e) => setReceivers(e.target.value)}
                     rows={8}
                     required
                   />
                   <p className="text-xs text-muted-foreground">
-                    Enter phone numbers separated by spaces, commas, or new lines. Numbers starting with 0 will be converted to 233 format.
+                    {campaignType === 'email'
+                      ? 'Enter email addresses separated by spaces, commas, or new lines.'
+                      : 'Enter phone numbers separated by spaces, commas, or new lines. Numbers starting with 0 will be converted to 233 format.'}
                   </p>
                   <p className="text-xs font-medium">
                     {receivers.split(/[\n,\s]+/).filter(n => n.trim()).length} recipients
@@ -656,6 +749,13 @@ export default function CampaignsPage() {
                 >
                   Single SMS
                 </Button>
+                <Button
+                  variant={campaignFilter === 'email' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCampaignFilter('email')}
+                >
+                  Email
+                </Button>
               </div>
             </div>
           </CardHeader>
@@ -696,9 +796,19 @@ export default function CampaignsPage() {
                     <tr key={campaign._id} className="border-b hover:bg-muted/30 transition-colors">
                       <td className="p-4">
                         <div>
-                          <div className="font-medium">{campaign.name}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{campaign.name}</span>
+                            <Badge variant={campaign.type === 'email' ? 'default' : 'secondary'} className="text-xs">
+                              {campaign.type === 'email' ? 'Email' : 'SMS'}
+                            </Badge>
+                          </div>
                           {campaign.description && (
                             <div className="text-xs text-muted-foreground mt-1">{campaign.description}</div>
+                          )}
+                          {campaign.type === 'email' && campaign.subject && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              <span className="font-medium">Subject:</span> {campaign.subject}
+                            </div>
                           )}
                         </div>
                       </td>
@@ -826,9 +936,22 @@ export default function CampaignsPage() {
           </DialogHeader>
           {selectedCampaign && (
             <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Badge variant={selectedCampaign.type === 'email' ? 'default' : 'secondary'} className="text-xs">
+                  {selectedCampaign.type === 'email' ? '📧 Email Campaign' : '💬 SMS Campaign'}
+                </Badge>
+              </div>
+
+              {selectedCampaign.type === 'email' && selectedCampaign.subject && (
+                <div>
+                  <h3 className="font-semibold mb-2">Subject:</h3>
+                  <p className="text-sm bg-muted p-3 rounded">{selectedCampaign.subject}</p>
+                </div>
+              )}
+
               <div>
-                <h3 className="font-semibold mb-2">Message:</h3>
-                <p className="text-sm bg-muted p-3 rounded">{selectedCampaign.message}</p>
+                <h3 className="font-semibold mb-2">{selectedCampaign.type === 'email' ? 'Email Body:' : 'Message:'}</h3>
+                <p className="text-sm bg-muted p-3 rounded whitespace-pre-wrap">{selectedCampaign.message}</p>
               </div>
               
               <div className="grid grid-cols-2 gap-4">

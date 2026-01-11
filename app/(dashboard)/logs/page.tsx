@@ -7,8 +7,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Search01Icon, FilterIcon, CheckmarkCircle01Icon, CancelCircleIcon, Mail01Icon, SmartPhone02Icon, Refresh01Icon } from '@hugeicons/core-free-icons';
+import { Search01Icon, FilterIcon, CheckmarkCircle01Icon, CancelCircleIcon, Mail01Icon, SmartPhone02Icon, Refresh01Icon, ViewIcon, Cancel01Icon } from '@hugeicons/core-free-icons';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface OTPLog {
   _id: string;
@@ -20,9 +27,13 @@ interface OTPLog {
   reference: string;
   generatedAt: string;
   verifiedAt?: string;
+  expiresAt?: string;
   status: string;
   projectName?: string;
   projectSenderID?: string;
+  failedAttempts?: number;
+  tokenUsed?: number;
+  locked?: boolean;
 }
 
 export default function LogsPage() {
@@ -34,6 +45,8 @@ export default function LogsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [limit, setLimit] = useState(50);
+  const [selectedLog, setSelectedLog] = useState<OTPLog | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
     fetchLogs();
@@ -74,6 +87,27 @@ export default function LogsPage() {
     fetchLogs();
   };
 
+  const getStatusLabel = (log: OTPLog) => {
+    if (log.verified) return 'Verified';
+    if (log.status === 'expired' || (log.expiresAt && new Date(log.expiresAt) < new Date())) {
+      return 'Expired';
+    }
+    return 'Unverified';
+  };
+
+  const getStatusColor = (log: OTPLog) => {
+    if (log.verified) return 'bg-green-100 text-green-800';
+    if (log.status === 'expired' || (log.expiresAt && new Date(log.expiresAt) < new Date())) {
+      return 'bg-yellow-100 text-yellow-800';
+    }
+    return 'bg-red-100 text-red-800';
+  };
+
+  const viewDetails = (log: OTPLog) => {
+    setSelectedLog(log);
+    setDetailsOpen(true);
+  };
+
   const exportLogs = () => {
     const csv = [
       ['Reference', 'Project', 'Receiver', 'Name', 'Type', 'Status', 'Generated At', 'Verified At'].join(','),
@@ -83,7 +117,7 @@ export default function LogsPage() {
         log.receiver,
         log.name || '',
         log.type,
-        log.verified ? 'Verified' : 'Unverified',
+        getStatusLabel(log),
         new Date(log.generatedAt).toLocaleString(),
         log.verifiedAt ? new Date(log.verifiedAt).toLocaleString() : 'N/A',
       ].join(','))
@@ -245,6 +279,7 @@ export default function LogsPage() {
                     <th className="text-left py-3 px-4 text-sm font-semibold text-zinc-700">Status</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold text-zinc-700">Generated</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold text-zinc-700">Verified</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-zinc-700">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -252,7 +287,7 @@ export default function LogsPage() {
                     <tr key={log._id} className="border-b hover:bg-zinc-50">
                       <td className="py-3 px-4">
                         <code className="text-xs bg-zinc-100 px-2 py-1 rounded">
-                          {log.reference}
+                          {log.reference.substring(0, 8)}...
                         </code>
                       </td>
                       <td className="py-3 px-4 text-sm">
@@ -280,11 +315,9 @@ export default function LogsPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
-                          log.verified ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${getStatusColor(log)}`}>
                           {log.verified ? <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} strokeWidth={1.5} /> : <HugeiconsIcon icon={CancelCircleIcon} size={12} strokeWidth={1.5} />}
-                          {log.verified ? 'Verified' : 'Unverified'}
+                          {getStatusLabel(log)}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-sm text-zinc-600">
@@ -292,6 +325,16 @@ export default function LogsPage() {
                       </td>
                       <td className="py-3 px-4 text-sm text-zinc-600">
                         {log.verifiedAt ? new Date(log.verifiedAt).toLocaleString() : '-'}
+                      </td>
+                      <td className="py-3 px-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => viewDetails(log)}
+                        >
+                          <HugeiconsIcon icon={ViewIcon} size={14} strokeWidth={1.5} className="mr-1" />
+                          View
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -301,6 +344,128 @@ export default function LogsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Details Dialog */}
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>OTP Log Details</DialogTitle>
+            <DialogDescription>
+              Complete information about this OTP request
+            </DialogDescription>
+          </DialogHeader>
+          {selectedLog && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-zinc-700 mb-1">Reference</p>
+                  <code className="text-xs bg-zinc-100 px-2 py-1 rounded block break-all">
+                    {selectedLog.reference}
+                  </code>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-zinc-700 mb-1">Status</p>
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${getStatusColor(selectedLog)}`}>
+                    {selectedLog.verified ? <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} strokeWidth={1.5} /> : <HugeiconsIcon icon={CancelCircleIcon} size={12} strokeWidth={1.5} />}
+                    {getStatusLabel(selectedLog)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-zinc-700 mb-1">Project</p>
+                  <p className="text-sm">{selectedLog.projectName}</p>
+                  {selectedLog.projectSenderID && (
+                    <p className="text-xs text-zinc-500">{selectedLog.projectSenderID}</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-zinc-700 mb-1">Type</p>
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                    selectedLog.type === 'phone' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                  }`}>
+                    {selectedLog.type === 'phone' ? <HugeiconsIcon icon={SmartPhone02Icon} size={12} strokeWidth={1.5} /> : <HugeiconsIcon icon={Mail01Icon} size={12} strokeWidth={1.5} />}
+                    {selectedLog.type}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-zinc-700 mb-1">Receiver</p>
+                  <p className="text-sm">{selectedLog.receiver}</p>
+                </div>
+                {selectedLog.name && (
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-700 mb-1">Name</p>
+                    <p className="text-sm">{selectedLog.name}</p>
+                  </div>
+                )}
+              </div>
+
+              {selectedLog.email && (
+                <div>
+                  <p className="text-sm font-semibold text-zinc-700 mb-1">Email</p>
+                  <p className="text-sm">{selectedLog.email}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-zinc-700 mb-1">Generated At</p>
+                  <p className="text-sm text-zinc-600">{new Date(selectedLog.generatedAt).toLocaleString()}</p>
+                </div>
+                {selectedLog.verifiedAt && (
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-700 mb-1">Verified At</p>
+                    <p className="text-sm text-zinc-600">{new Date(selectedLog.verifiedAt).toLocaleString()}</p>
+                  </div>
+                )}
+              </div>
+
+              {selectedLog.expiresAt && (
+                <div>
+                  <p className="text-sm font-semibold text-zinc-700 mb-1">Expires At</p>
+                  <p className="text-sm text-zinc-600">{new Date(selectedLog.expiresAt).toLocaleString()}</p>
+                  {new Date(selectedLog.expiresAt) < new Date() && !selectedLog.verified && (
+                    <p className="text-xs text-yellow-600 mt-1">⚠️ This OTP has expired</p>
+                  )}
+                </div>
+              )}
+
+              {(selectedLog.failedAttempts !== undefined || selectedLog.tokenUsed !== undefined) && (
+                <div className="grid grid-cols-2 gap-4">
+                  {selectedLog.failedAttempts !== undefined && (
+                    <div>
+                      <p className="text-sm font-semibold text-zinc-700 mb-1">Failed Attempts</p>
+                      <p className="text-sm text-zinc-600">{selectedLog.failedAttempts}</p>
+                    </div>
+                  )}
+                  {selectedLog.tokenUsed !== undefined && (
+                    <div>
+                      <p className="text-sm font-semibold text-zinc-700 mb-1">Token Used</p>
+                      <p className="text-sm text-zinc-600">{selectedLog.tokenUsed}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {selectedLog.locked && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-800">🔒 This OTP is locked due to too many failed attempts</p>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex justify-end mt-4">
+            <Button onClick={() => setDetailsOpen(false)} variant="outline">
+              <HugeiconsIcon icon={Cancel01Icon} size={14} strokeWidth={1.5} className="mr-1" />
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
