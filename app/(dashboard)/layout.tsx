@@ -81,7 +81,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       ],
     },
     {
-      name: "Developer",
+      name: "Developer Tools",
       icon: "shield",
       group: true,
       items: [
