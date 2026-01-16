@@ -1,3 +1,5 @@
+const path = require('path');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -18,6 +20,11 @@ const nextConfig = {
     maxInactiveAge: 60 * 1000,
     // Number of pages that should be kept simultaneously without being disposed
     pagesBufferLength: 5,
+  },
+  // Explicitly configure webpack to resolve @ alias
+  webpack: (config) => {
+    config.resolve.alias['@'] = path.resolve(__dirname);
+    return config;
   },
 }
 
