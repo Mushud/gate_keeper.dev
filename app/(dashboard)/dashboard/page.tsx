@@ -108,6 +108,13 @@ interface Analytics {
     unverifiedOTPs: number[];
     kycVerifications: number[];
     smsSent?: number[];
+    smsFailed?: number[];
+    singleSmsSent?: number[];
+    singleSmsFailed?: number[];
+    bulkSmsSent?: number[];
+    bulkSmsFailed?: number[];
+    emailSent?: number[];
+    emailFailed?: number[];
     kycByType?: {
       phone: number[];
       ghanaCard: number[];
@@ -128,6 +135,22 @@ interface Analytics {
     }>;
   };
   sms?: {
+    totalCampaigns: number;
+    totalSent: number;
+    totalFailed: number;
+    creditsUsed: number;
+    singleSMS?: {
+      count: number;
+      sent: number;
+      failed: number;
+    };
+    bulkCampaigns?: {
+      count: number;
+      sent: number;
+      failed: number;
+    };
+  };
+  email?: {
     totalCampaigns: number;
     totalSent: number;
     totalFailed: number;
@@ -155,6 +178,8 @@ export default function DashboardPage() {
       console.log("KYC Data:", data.kyc);
       console.log("Daily Stats:", data.dailyStats);
       console.log("KYC By Type:", data.dailyStats?.kycByType);
+      console.log("SMS Data:", data.sms);
+      console.log("Email Data:", data.email);
 
       // Generate mock daily stats if backend doesn't provide them yet
       const generateMockDailyStats = () => {
@@ -223,6 +248,24 @@ export default function DashboardPage() {
               totalSent: data.sms.totalSent || 0,
               totalFailed: data.sms.totalFailed || 0,
               creditsUsed: data.sms.creditsUsed || 0,
+              singleSMS: data.sms.singleSMS || {
+                count: 0,
+                sent: 0,
+                failed: 0,
+              },
+              bulkCampaigns: data.sms.bulkCampaigns || {
+                count: 0,
+                sent: 0,
+                failed: 0,
+              },
+            }
+          : undefined,
+        email: data.email
+          ? {
+              totalCampaigns: data.email.totalCampaigns || 0,
+              totalSent: data.email.totalSent || 0,
+              totalFailed: data.email.totalFailed || 0,
+              creditsUsed: data.email.creditsUsed || 0,
             }
           : undefined,
       };
@@ -413,7 +456,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Analytics with Highcharts */}
+      {/* Analytics with Highcharts - Combined Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {loading ? (
           <>
@@ -744,6 +787,298 @@ export default function DashboardPage() {
                           ? `${Math.round(
                               ((analytics.kyc.successCount || 0) /
                                 analytics.kyc.total) *
+                                100
+                            )}% success rate`
+                          : "0% success rate"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SMS Campaign Analytics - Only show if data exists */}
+            {analytics?.sms && analytics.sms.totalCampaigns > 0 && (
+              <div className="relative">
+                <div className="relative bg-gradient-to-b from-neutral-50 to-white rounded-2xl p-6 border border-zinc-200 overflow-hidden">
+                  <div className="relative z-20">
+                    <div className="mb-6">
+                      <h3 className="text-lg font-bold text-zinc-900 mb-3">
+                        SMS Campaigns
+                      </h3>
+                      <div className="grid grid-cols-4 gap-3">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                            <p className="text-xs font-medium text-zinc-500">
+                              Single Sent
+                            </p>
+                          </div>
+                          <p className="text-lg font-bold text-zinc-900">
+                            {(analytics?.sms?.singleSMS?.sent || 0).toLocaleString()}
+                          </p>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                            <p className="text-xs font-medium text-zinc-500">
+                              Single Failed
+                            </p>
+                          </div>
+                          <p className="text-lg font-bold text-zinc-900">
+                            {(analytics?.sms?.singleSMS?.failed || 0).toLocaleString()}
+                          </p>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                            <p className="text-xs font-medium text-zinc-500">
+                              Bulk Sent
+                            </p>
+                          </div>
+                          <p className="text-lg font-bold text-zinc-900">
+                            {(analytics?.sms?.bulkCampaigns?.sent || 0).toLocaleString()}
+                          </p>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                            <p className="text-xs font-medium text-zinc-500">
+                              Bulk Failed
+                            </p>
+                          </div>
+                          <p className="text-lg font-bold text-zinc-900">
+                            {(analytics?.sms?.bulkCampaigns?.failed || 0).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Chart
+                      options={{
+                        chart: {
+                          type: "spline",
+                          height: 240,
+                          backgroundColor: "transparent",
+                        },
+                        title: { text: "" },
+                        credits: { enabled: false },
+                        legend: {
+                          enabled: true,
+                          align: "center",
+                          verticalAlign: "bottom",
+                          itemStyle: {
+                            color: "#71717a",
+                            fontSize: "10px",
+                            fontWeight: "500",
+                          },
+                        },
+                        xAxis: {
+                          categories: analytics?.dailyStats?.dates || [
+                            "Mon",
+                            "Tue",
+                            "Wed",
+                            "Thu",
+                            "Fri",
+                            "Sat",
+                            "Sun",
+                          ],
+                          lineColor: "#e5e7eb",
+                          tickColor: "#e5e7eb",
+                          labels: {
+                            style: { color: "#71717a", fontSize: "11px" },
+                          },
+                        },
+                        yAxis: {
+                          title: { text: "" },
+                          gridLineColor: "#f4f4f5",
+                          labels: {
+                            style: { color: "#71717a", fontSize: "11px" },
+                          },
+                        },
+                        plotOptions: {
+                          spline: {
+                            lineWidth: 2,
+                            marker: {
+                              enabled: false,
+                              states: { hover: { enabled: true, radius: 4 } },
+                            },
+                            states: {
+                              hover: { lineWidth: 3 },
+                            },
+                          },
+                        },
+                        series: [
+                          {
+                            name: "Single SMS Sent",
+                            data: analytics?.dailyStats?.singleSmsSent || [0, 0, 0, 0, 0, 0, 0],
+                            color: "#10b981",
+                          },
+                          {
+                            name: "Single SMS Failed",
+                            data: analytics?.dailyStats?.singleSmsFailed || [0, 0, 0, 0, 0, 0, 0],
+                            color: "#ef4444",
+                          },
+                          {
+                            name: "Bulk SMS Sent",
+                            data: analytics?.dailyStats?.bulkSmsSent || [0, 0, 0, 0, 0, 0, 0],
+                            color: "#3b82f6",
+                          },
+                          {
+                            name: "Bulk SMS Failed",
+                            data: analytics?.dailyStats?.bulkSmsFailed || [0, 0, 0, 0, 0, 0, 0],
+                            color: "#f97316",
+                          },
+                        ],
+                        tooltip: {
+                          backgroundColor: "#18181b",
+                          borderColor: "#18181b",
+                          style: { color: "#ffffff" },
+                          shared: true,
+                          crosshairs: true,
+                        },
+                      }}
+                    />
+
+                    <div className="flex items-center justify-between text-xs pt-4 mt-auto border-t border-zinc-200">
+                      <span className="text-zinc-600">
+                        {(analytics?.sms?.singleSMS?.count || 0)} single + {(analytics?.sms?.bulkCampaigns?.count || 0)} bulk
+                      </span>
+                      <span className="font-semibold text-green-600">
+                        {analytics?.sms && (analytics.sms.totalSent + analytics.sms.totalFailed) > 0
+                          ? `${Math.round(
+                              (analytics.sms.totalSent /
+                                (analytics.sms.totalSent + analytics.sms.totalFailed)) *
+                                100
+                            )}% success rate`
+                          : "0% success rate"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Email Campaign Analytics - Only show if data exists */}
+            {analytics?.email && analytics.email.totalCampaigns > 0 && (
+              <div className="relative">
+                <div className="relative bg-gradient-to-b from-neutral-50 to-white rounded-2xl p-6 border border-zinc-200 overflow-hidden">
+                  <div className="relative z-20">
+                    <div className="mb-6">
+                      <h3 className="text-lg font-bold text-zinc-900 mb-3">
+                        Email Campaigns
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                            <p className="text-xs font-medium text-zinc-500">
+                              Sent
+                            </p>
+                          </div>
+                          <p className="text-xl font-bold text-zinc-900">
+                            {(analytics?.email?.totalSent || 0).toLocaleString()}
+                          </p>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                            <p className="text-xs font-medium text-zinc-500">
+                              Failed
+                            </p>
+                          </div>
+                          <p className="text-xl font-bold text-zinc-900">
+                            {(analytics?.email?.totalFailed || 0).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Chart
+                      options={{
+                        chart: {
+                          type: "spline",
+                          height: 240,
+                          backgroundColor: "transparent",
+                        },
+                        title: { text: "" },
+                        credits: { enabled: false },
+                        legend: {
+                          enabled: true,
+                          align: "center",
+                          verticalAlign: "bottom",
+                          itemStyle: {
+                            color: "#71717a",
+                            fontSize: "10px",
+                            fontWeight: "500",
+                          },
+                        },
+                        xAxis: {
+                          categories: analytics?.dailyStats?.dates || [
+                            "Mon",
+                            "Tue",
+                            "Wed",
+                            "Thu",
+                            "Fri",
+                            "Sat",
+                            "Sun",
+                          ],
+                          lineColor: "#e5e7eb",
+                          tickColor: "#e5e7eb",
+                          labels: {
+                            style: { color: "#71717a", fontSize: "11px" },
+                          },
+                        },
+                        yAxis: {
+                          title: { text: "" },
+                          gridLineColor: "#f4f4f5",
+                          labels: {
+                            style: { color: "#71717a", fontSize: "11px" },
+                          },
+                        },
+                        plotOptions: {
+                          spline: {
+                            lineWidth: 2,
+                            marker: {
+                              enabled: false,
+                              states: { hover: { enabled: true, radius: 4 } },
+                            },
+                            states: {
+                              hover: { lineWidth: 3 },
+                            },
+                          },
+                        },
+                        series: [
+                          {
+                            name: "Email Sent",
+                            data: analytics?.dailyStats?.emailSent || [0, 0, 0, 0, 0, 0, 0],
+                            color: "#3b82f6",
+                          },
+                          {
+                            name: "Email Failed",
+                            data: analytics?.dailyStats?.emailFailed || [0, 0, 0, 0, 0, 0, 0],
+                            color: "#ef4444",
+                          },
+                        ],
+                        tooltip: {
+                          backgroundColor: "#18181b",
+                          borderColor: "#18181b",
+                          style: { color: "#ffffff" },
+                          shared: true,
+                          crosshairs: true,
+                        },
+                      }}
+                    />
+
+                    <div className="flex items-center justify-between text-xs pt-4 mt-auto border-t border-zinc-200">
+                      <span className="text-zinc-600">
+                        {analytics?.email?.totalCampaigns || 0} campaigns
+                      </span>
+                      <span className="font-semibold text-blue-600">
+                        {analytics?.email && (analytics.email.totalSent + analytics.email.totalFailed) > 0
+                          ? `${Math.round(
+                              (analytics.email.totalSent /
+                                (analytics.email.totalSent + analytics.email.totalFailed)) *
                                 100
                             )}% success rate`
                           : "0% success rate"}

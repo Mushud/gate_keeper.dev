@@ -159,7 +159,7 @@ export default function CampaignsPage() {
   // Alert modal state
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
-  const [alertType, setAlertType] = useState<'success' | 'error'>('success');
+  const [alertType, setAlertType] = useState<'success' | 'error' | 'info'>('success');
 
   // Create campaign state
   const [name, setName] = useState('');
@@ -170,7 +170,7 @@ export default function CampaignsPage() {
   const [campaignType, setCampaignType] = useState<'sms' | 'email'>('sms');
   
   // Show alert modal
-  const showAlert = (message: string, type: 'success' | 'error' = 'success') => {
+  const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setAlertMessage(message);
     setAlertType(type);
     setAlertOpen(true);
@@ -292,29 +292,85 @@ export default function CampaignsPage() {
         .map(n => n.trim())
         .filter(n => n)
         .map(n => {
-          // For SMS: If number starts with 0, replace with 233
-          if (campaignType === 'sms' && n.startsWith('0')) {
-            return '233' + n.substring(1);
+          // For SMS: Normalize phone numbers
+          if (campaignType === 'sms') {
+            // If 9 digits, prepend 0 (e.g., 548215801 -> 0548215801)
+            if (n.length === 9 && /^\d{9}$/.test(n)) {
+              n = '0' + n;
+            }
+            // If starts with 0, replace with 233 (e.g., 0548215801 -> 233548215801)
+            if (n.startsWith('0')) {
+              return '233' + n.substring(1);
+            }
           }
           return n;
         });
       
       const endpoint = campaignType === 'sms' ? '/api/campaigns' : '/api/email_campaigns';
-      const payload = campaignType === 'sms' 
-        ? { name, description, message, receivers: receiversArray }
-        : { name, description, subject, message, receivers: receiversArray };
       
-      await api.post(endpoint, payload, { headers: { key } });
-      
-      setCreateDialogOpen(false);
-      setName('');
-      setDescription('');
-      setMessage('');
-      setSubject('');
-      setReceivers('');
-      setCampaignType('sms');
-      fetchCampaigns();
-      showAlert('Campaign created successfully!', 'success');
+      // For SMS campaigns with large receiver lists, use chunking
+      if (campaignType === 'sms' && receiversArray.length > 2500) {
+        showAlert(`Creating campaign with ${receiversArray.length.toLocaleString()} recipients. Please wait...`, 'info');
+        
+        // Create campaign with first chunk (up to 2500)
+        const firstChunkSize = 2500;
+        const firstChunk = receiversArray.slice(0, firstChunkSize);
+        
+        const payload = { 
+          name, 
+          description, 
+          message, 
+          receivers: firstChunk 
+        };
+        
+        const createResponse = await api.post(endpoint, payload, { headers: { key } });
+        const campaignId = createResponse.data?.campaign?._id;
+        
+        if (!campaignId) {
+          showAlert('Failed to create campaign', 'error');
+          setLoading(false);
+          return;
+        }
+        
+        // Add remaining receivers in chunks of 2500
+        let uploadedCount = firstChunkSize;
+        for (let i = firstChunkSize; i < receiversArray.length; i += firstChunkSize) {
+          const chunk = receiversArray.slice(i, i + firstChunkSize);
+          await api.post(`/api/campaigns/${campaignId}/receivers`, 
+            { receivers: chunk }, 
+            { headers: { key } }
+          );
+          uploadedCount += chunk.length;
+          showAlert(`Uploading: ${uploadedCount.toLocaleString()} of ${receiversArray.length.toLocaleString()} recipients uploaded`, 'info');
+        }
+        
+        setCreateDialogOpen(false);
+        setName('');
+        setDescription('');
+        setMessage('');
+        setSubject('');
+        setReceivers('');
+        setCampaignType('sms');
+        fetchCampaigns();
+        showAlert(`Campaign created successfully with all ${receiversArray.length.toLocaleString()} recipients!`, 'success');
+      } else {
+        // Standard flow for email campaigns or small SMS campaigns
+        const payload = campaignType === 'sms' 
+          ? { name, description, message, receivers: receiversArray }
+          : { name, description, subject, message, receivers: receiversArray };
+        
+        await api.post(endpoint, payload, { headers: { key } });
+        
+        setCreateDialogOpen(false);
+        setName('');
+        setDescription('');
+        setMessage('');
+        setSubject('');
+        setReceivers('');
+        setCampaignType('sms');
+        fetchCampaigns();
+        showAlert('Campaign created successfully!', 'success');
+      }
     } catch (error: any) {
       showAlert(error.response?.data?.error || 'Failed to create campaign', 'error');
     } finally {
@@ -454,7 +510,8 @@ export default function CampaignsPage() {
     reader.onload = (evt) => {
       try {
         const data = evt.target?.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
+        const isCsv = file.name.toLowerCase().endsWith('.csv');
+        const workbook = XLSX.read(data, { type: isCsv ? 'string' : 'binary' });
         
         // Get first sheet
         const sheetName = workbook.SheetNames[0];
@@ -469,7 +526,23 @@ export default function CampaignsPage() {
           return row.PhoneNumber || row.phoneNumber || row.Phone || row.phone || 
                  row.Number || row.number || row.Mobile || row.mobile || 
                  Object.values(row)[0]; // Fallback to first column
-        }).filter((num: any) => num); // Remove empty values
+        }).filter((num: any) => num) // Remove empty values
+          .map((num: any) => {
+            // Normalize phone numbers for SMS campaigns
+            if (campaignType === 'sms') {
+              let n = String(num).trim();
+              // If 9 digits, prepend 0
+              if (n.length === 9 && /^\d{9}$/.test(n)) {
+                n = '0' + n;
+              }
+              // If starts with 0, replace with 233
+              if (n.startsWith('0')) {
+                return '233' + n.substring(1);
+              }
+              return n;
+            }
+            return String(num).trim();
+          });
         
         // Get existing numbers
         const existingReceivers = receivers.trim();
@@ -484,7 +557,7 @@ export default function CampaignsPage() {
         const newNumbers = phoneNumbers.filter((num: any) => !existingSet.has(String(num)));
         
         if (newNumbers.length === 0) {
-          showAlert('All phone numbers from the Excel file already exist in the list.', 'error');
+          showAlert('All phone numbers from the file already exist in the list.', 'error');
           if (fileInputRef.current) {
             fileInputRef.current.value = '';
           }
@@ -505,15 +578,20 @@ export default function CampaignsPage() {
         const skipped = phoneNumbers.length - newNumbers.length;
         const message = skipped > 0 
           ? `Added ${newNumbers.length} new phone numbers (${skipped} duplicates skipped)`
-          : `Added ${newNumbers.length} phone numbers from Excel file`;
+          : `Added ${newNumbers.length} phone numbers from file`;
         showAlert(message, 'success');
       } catch (error) {
-        console.error('Error reading Excel file:', error);
-        showAlert('Failed to read Excel file. Please make sure it\'s a valid Excel file with phone numbers.', 'error');
+        console.error('Error reading file:', error);
+        showAlert('Failed to read file. Please make sure it\'s a valid Excel or CSV file with phone numbers.', 'error');
       }
     };
     
-    reader.readAsBinaryString(file);
+    // Use appropriate reader method based on file type
+    if (file.name.toLowerCase().endsWith('.csv')) {
+      reader.readAsText(file);
+    } else {
+      reader.readAsBinaryString(file);
+    }
   };
 
   return (
@@ -656,6 +734,11 @@ export default function CampaignsPage() {
                   />
                   <p className="text-xs text-muted-foreground">
                     Use [name] placeholder to personalize messages. {message.length} / 1600 characters
+                    {campaignType === 'sms' && message.length > 0 && (
+                      <span className="ml-2 font-medium text-blue-600">
+                        • {Math.ceil(message.length / 160)} credit{Math.ceil(message.length / 160) > 1 ? 's' : ''} per SMS
+                      </span>
+                    )}
                   </p>
                 </div>
 
@@ -679,12 +762,12 @@ export default function CampaignsPage() {
                         onClick={() => fileInputRef.current?.click()}
                       >
                         <HugeiconsIcon icon={Upload01Icon} className="mr-2 h-4 w-4" />
-                        Upload Excel
+                        Upload File
                       </Button>
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".xlsx,.xls"
+                        accept=".xlsx,.xls,.csv"
                         onChange={handleFileUpload}
                         className="hidden"
                       />
@@ -697,16 +780,43 @@ export default function CampaignsPage() {
                       : "0548215801 0241234567 233201234567&#10;0551234567, 0241112233"}
                     value={receivers}
                     onChange={(e) => setReceivers(e.target.value)}
+                    onBlur={(e) => {
+                      // Normalize phone numbers on blur (when user leaves the field)
+                      if (campaignType === 'sms') {
+                        const normalized = e.target.value
+                          .split(/[\n,\s]+/)
+                          .map(n => n.trim())
+                          .filter(n => n)
+                          .map(n => {
+                            // If 9 digits, prepend 0
+                            if (n.length === 9 && /^\d{9}$/.test(n)) {
+                              n = '0' + n;
+                            }
+                            // If starts with 0, replace with 233
+                            if (n.startsWith('0')) {
+                              return '233' + n.substring(1);
+                            }
+                            return n;
+                          })
+                          .join('\n');
+                        setReceivers(normalized);
+                      }
+                    }}
                     rows={8}
                     required
                   />
                   <p className="text-xs text-muted-foreground">
                     {campaignType === 'email'
                       ? 'Enter email addresses separated by spaces, commas, or new lines.'
-                      : 'Enter phone numbers separated by spaces, commas, or new lines. Numbers starting with 0 will be converted to 233 format.'}
+                      : 'Enter phone numbers separated by spaces, commas, or new lines. 9-digit numbers will be prefixed with 0, then converted to 233 format. Maximum: 11,000 recipients per campaign.'}
                   </p>
                   <p className="text-xs font-medium">
                     {receivers.split(/[\n,\s]+/).filter(n => n.trim()).length} recipients
+                    {campaignType === 'sms' && message.length > 0 && receivers.trim() && (
+                      <span className="ml-2 text-blue-600">
+                        • Total: {(Math.ceil(message.length / 160) * receivers.split(/[\n,\s]+/).filter(n => n.trim()).length).toLocaleString()} credits needed
+                      </span>
+                    )}
                   </p>
                 </div>
 
@@ -1003,16 +1113,21 @@ export default function CampaignsPage() {
       <Dialog open={alertOpen} onOpenChange={setAlertOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className={alertType === 'success' ? 'text-green-600' : 'text-red-600'}>
+            <DialogTitle className={alertType === 'success' ? 'text-green-600' : alertType === 'error' ? 'text-red-600' : 'text-blue-600'}>
               {alertType === 'success' ? (
                 <div className="flex items-center gap-2">
                   <HugeiconsIcon icon={CheckmarkCircle01Icon} className="h-5 w-5" />
                   Success
                 </div>
-              ) : (
+              ) : alertType === 'error' ? (
                 <div className="flex items-center gap-2">
                   <HugeiconsIcon icon={Cancel01Icon} className="h-5 w-5" />
                   Error
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <HugeiconsIcon icon={Loading03Icon} className="h-5 w-5 animate-spin" />
+                  Processing
                 </div>
               )}
             </DialogTitle>
@@ -1022,7 +1137,7 @@ export default function CampaignsPage() {
           </div>
           <div className="flex justify-end">
             <Button onClick={() => setAlertOpen(false)}>
-              OK
+              {alertType === 'info' ? 'Continue' : 'OK'}
             </Button>
           </div>
         </DialogContent>
