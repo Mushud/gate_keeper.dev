@@ -308,20 +308,17 @@ export default function CampaignsPage() {
       
       const endpoint = campaignType === 'sms' ? '/api/campaigns' : '/api/email_campaigns';
       
-      // For SMS campaigns with large receiver lists, use chunking
-      if (campaignType === 'sms' && receiversArray.length > 2500) {
-        showAlert(`Creating campaign with ${receiversArray.length.toLocaleString()} recipients. Please wait...`, 'info');
+      // For campaigns with large receiver lists, use chunking (2500 batch size)
+      if (receiversArray.length > 2500) {
+        showAlert(`Creating ${campaignType === 'email' ? 'email' : 'SMS'} campaign with ${receiversArray.length.toLocaleString()} recipients. Please wait...`, 'info');
         
         // Create campaign with first chunk (up to 2500)
         const firstChunkSize = 2500;
         const firstChunk = receiversArray.slice(0, firstChunkSize);
         
-        const payload = { 
-          name, 
-          description, 
-          message, 
-          receivers: firstChunk 
-        };
+        const payload = campaignType === 'sms' 
+          ? { name, description, message, receivers: firstChunk }
+          : { name, description, subject, message, receivers: firstChunk };
         
         const createResponse = await api.post(endpoint, payload, { headers: { key } });
         const campaignId = createResponse.data?.campaign?._id;
@@ -336,7 +333,11 @@ export default function CampaignsPage() {
         let uploadedCount = firstChunkSize;
         for (let i = firstChunkSize; i < receiversArray.length; i += firstChunkSize) {
           const chunk = receiversArray.slice(i, i + firstChunkSize);
-          await api.post(`/api/campaigns/${campaignId}/receivers`, 
+          const addReceiversEndpoint = campaignType === 'sms' 
+            ? `/api/campaigns/${campaignId}/receivers`
+            : `/api/email_campaigns/${campaignId}/receivers`;
+          
+          await api.post(addReceiversEndpoint, 
             { receivers: chunk }, 
             { headers: { key } }
           );
@@ -354,7 +355,7 @@ export default function CampaignsPage() {
         fetchCampaigns();
         showAlert(`Campaign created successfully with all ${receiversArray.length.toLocaleString()} recipients!`, 'success');
       } else {
-        // Standard flow for email campaigns or small SMS campaigns
+        // Standard flow for small campaigns (under 2500 recipients)
         const payload = campaignType === 'sms' 
           ? { name, description, message, receivers: receiversArray }
           : { name, description, subject, message, receivers: receiversArray };
@@ -807,7 +808,7 @@ export default function CampaignsPage() {
                   />
                   <p className="text-xs text-muted-foreground">
                     {campaignType === 'email'
-                      ? 'Enter email addresses separated by spaces, commas, or new lines.'
+                      ? 'Enter email addresses separated by spaces, commas, or new lines. Maximum: 11,000 recipients per campaign.'
                       : 'Enter phone numbers separated by spaces, commas, or new lines. 9-digit numbers will be prefixed with 0, then converted to 233 format. Maximum: 11,000 recipients per campaign.'}
                   </p>
                   <p className="text-xs font-medium">
@@ -817,6 +818,12 @@ export default function CampaignsPage() {
                         • Total: {(Math.ceil(message.length / 160) * receivers.split(/[\n,\s]+/).filter(n => n.trim()).length).toLocaleString()} credits needed
                       </span>
                     )}
+                    {campaignType === 'email' && receivers.trim() && (
+                      <span className="ml-2 text-blue-600">
+                        • Total: {receivers.split(/[\n,\s]+/).filter(n => n.trim()).length} credits needed
+                      </span>
+                    )}
+
                   </p>
                 </div>
 
