@@ -283,8 +283,12 @@ export default function CampaignsPage() {
         return;
       }
 
-      // Use the account-level single campaign endpoint
-      const response = await api.get(`/api/account/campaigns/${campaignId}`);
+      // Use appropriate endpoint based on campaign type
+      const endpoint = campaign.type === 'email'
+        ? `/api/account/email_campaigns/${campaignId}`
+        : `/api/account/campaigns/${campaignId}`;
+      
+      const response = await api.get(endpoint);
       const updatedCampaign = response.data.campaign;
       
       if (updatedCampaign) {
@@ -469,16 +473,22 @@ export default function CampaignsPage() {
     if (!campaign) return;
 
     const remainingCount = campaign.totalReceivers - campaign.sentCount;
-    if (!confirm(`This will retry sending to the ${remainingCount} remaining recipients. Continue?`)) {
+    const campaignTypeText = campaign.type === 'email' ? 'email' : 'SMS';
+    if (!confirm(`This will retry sending ${campaignTypeText} to the ${remainingCount} remaining recipients. Continue?`)) {
       return;
     }
 
     setRetryingCampaignId(campaignId);
     try {
-      const response = await api.post(`/api/account/campaigns/${campaignId}/retry`);
+      // Use appropriate endpoint based on campaign type
+      const endpoint = campaign.type === 'email'
+        ? `/api/account/email_campaigns/${campaignId}/retry`
+        : `/api/account/campaigns/${campaignId}/retry`;
+      
+      const response = await api.post(endpoint);
       
       showAlert(
-        `Retry started! Sending to ${response.data.remainingToSend} remaining recipients.`, 
+        `Retry started! Sending ${campaignTypeText} to ${response.data.remainingToSend} remaining recipients.`, 
         'success'
       );
       
@@ -504,30 +514,24 @@ export default function CampaignsPage() {
   const viewCampaignDetails = async (campaignId: string) => {
     setLoadingCampaignId(campaignId);
     try {
-      // Find the campaign to get its project
+      // Find the campaign to get its type and project
       const campaign = campaigns.find(c => c._id === campaignId);
-      if (!campaign?.project) {
-        showAlert('Campaign project not found.', 'error');
+      if (!campaign) {
+        showAlert('Campaign not found.', 'error');
         setLoadingCampaignId(null);
         return;
       }
 
-      // Handle project as both string ID and object
-      const projectId = typeof campaign.project === 'string' ? campaign.project : campaign.project._id;
-      const project = projects.find(p => p._id === projectId);
-      if (!project?.apiKey && !project?.projectID) {
-        showAlert('Project key not found. Please try refreshing the page.', 'error');
-        setLoadingCampaignId(null);
-        return;
-      }
+      // Use account-level endpoints which don't require project API key
+      const endpoint = campaign.type === 'email'
+        ? `/api/account/email_campaigns/${campaignId}`
+        : `/api/account/campaigns/${campaignId}`;
       
-      // Use apiKey if available, otherwise use projectID
-      const key = project.apiKey || project.projectID;
+      const response = await api.get(endpoint);
+      const campaignData = response.data.campaign;
       
-      const response = await api.get(`/api/campaigns/${campaignId}`, {
-        headers: { key }
-      });
-      setSelectedCampaign(response.data.campaign);
+      // Preserve the type
+      setSelectedCampaign({ ...campaignData, type: campaign.type });
       setViewDialogOpen(true);
     } catch (error) {
       showAlert('Failed to fetch campaign details', 'error');
@@ -1130,6 +1134,22 @@ export default function CampaignsPage() {
                                 <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
                               ) : (
                                 <HugeiconsIcon icon={SentIcon} className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
+                          {campaign.status === 'failed' && (
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => retryCampaign(campaign._id)}
+                              title={`Retry failed campaign - resend to ${campaign.totalReceivers - campaign.sentCount} remaining recipients`}
+                              disabled={retryingCampaignId === campaign._id}
+                              className="bg-orange-500 hover:bg-orange-600"
+                            >
+                              {retryingCampaignId === campaign._id ? (
+                                <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <HugeiconsIcon icon={RotateClockwiseIcon} className="h-4 w-4" />
                               )}
                             </Button>
                           )}
