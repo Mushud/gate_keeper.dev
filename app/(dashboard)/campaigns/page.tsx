@@ -226,6 +226,50 @@ export default function CampaignsPage() {
     fetchCampaigns(); // Fetch all campaigns on mount
   }, []);
 
+  // Auto-poll for processing campaigns to show real-time progress
+  useEffect(() => {
+    const processingCampaigns = campaigns.filter(c => c.status === 'processing');
+    
+    if (processingCampaigns.length === 0) return;
+    
+    console.log(`[Polling] Found ${processingCampaigns.length} processing campaigns, starting polling...`);
+    
+    const pollInterval = setInterval(async () => {
+      for (const campaign of processingCampaigns) {
+        try {
+          const endpoint = campaign.type === 'email'
+            ? `/api/account/email_campaigns/${campaign._id}`
+            : `/api/account/campaigns/${campaign._id}`;
+          
+          const response = await api.get(endpoint);
+          const updatedCampaign = response.data.campaign;
+          
+          if (updatedCampaign) {
+            const campaignWithType = { ...updatedCampaign, type: campaign.type || 'sms' };
+            
+            setCampaigns(prev => 
+              prev.map(c => c._id === campaign._id ? campaignWithType : c)
+            );
+            
+            console.log(`[Polling] Campaign ${campaign._id}: ${updatedCampaign.sentCount}/${updatedCampaign.totalReceivers} sent, status: ${updatedCampaign.status}`);
+            
+            // If campaign is no longer processing, it will be removed from next poll
+            if (updatedCampaign.status !== 'processing') {
+              console.log(`[Polling] Campaign ${campaign._id} finished processing with status: ${updatedCampaign.status}`);
+            }
+          }
+        } catch (error) {
+          console.error(`[Polling] Failed to fetch campaign ${campaign._id}:`, error);
+        }
+      }
+    }, 3000); // Poll every 3 seconds
+    
+    return () => {
+      console.log('[Polling] Stopping polling interval');
+      clearInterval(pollInterval);
+    };
+  }, [campaigns.filter(c => c.status === 'processing').map(c => c._id).join(',')]);
+
   const fetchProjects = async () => {
     try {
       const response = await api.get('/api/projects');
@@ -1123,19 +1167,38 @@ export default function CampaignsPage() {
                             </Button>
                           )}
                           {campaign.status === 'sent' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => executeCampaign(campaign._id)}
-                              title="Resend campaign"
-                              disabled={executingCampaignId === campaign._id}
-                            >
-                              {executingCampaignId === campaign._id ? (
-                                <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <HugeiconsIcon icon={SentIcon} className="h-4 w-4" />
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => executeCampaign(campaign._id)}
+                                title="Resend campaign"
+                                disabled={executingCampaignId === campaign._id}
+                              >
+                                {executingCampaignId === campaign._id ? (
+                                  <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <HugeiconsIcon icon={SentIcon} className="h-4 w-4" />
+                                )}
+                              </Button>
+                              {/* Show retry button if there are failed recipients */}
+                              {campaign.failedCount > 0 && (
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => retryCampaign(campaign._id)}
+                                  title={`Retry ${campaign.failedCount} failed recipients`}
+                                  disabled={retryingCampaignId === campaign._id}
+                                  className="bg-orange-500 hover:bg-orange-600"
+                                >
+                                  {retryingCampaignId === campaign._id ? (
+                                    <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <HugeiconsIcon icon={RotateClockwiseIcon} className="h-4 w-4" />
+                                  )}
+                                </Button>
                               )}
-                            </Button>
+                            </>
                           )}
                           {campaign.status === 'failed' && (
                             <Button
