@@ -20,7 +20,8 @@ import {
   Cancel01Icon,
   Loading03Icon,
   Upload01Icon,
-  Download01Icon
+  Download01Icon,
+  RotateClockwiseIcon
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Badge } from '@/components/ui/badge';
@@ -67,6 +68,7 @@ interface Campaign {
   failedCount: number;
   creditsUsed: number;
   createdAt: string;
+  updatedAt?: string;
   sentAt?: string;
   logs?: string[];
   project?: string | {
@@ -149,6 +151,7 @@ export default function CampaignsPage() {
   const [loading, setLoading] = useState(false);
   const [loadingCampaignId, setLoadingCampaignId] = useState<string | null>(null);
   const [executingCampaignId, setExecutingCampaignId] = useState<string | null>(null);
+  const [retryingCampaignId, setRetryingCampaignId] = useState<string | null>(null);
   const [refreshingCampaignId, setRefreshingCampaignId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -176,14 +179,47 @@ export default function CampaignsPage() {
     setAlertOpen(true);
   };
 
-  // Filter campaigns based on type
+  // Filter campaigns based on type (simplified since backend now handles bulk/single filtering)
   const filteredCampaigns = campaigns.filter(campaign => {
     if (campaignFilter === 'all') return true;
     if (campaignFilter === 'email') return campaign.type === 'email';
-    if (campaignFilter === 'single') return campaign.name.startsWith('Single SMS -') && campaign.type !== 'email';
-    if (campaignFilter === 'bulk') return !campaign.name.startsWith('Single SMS -') && campaign.type !== 'email';
+    if (campaignFilter === 'single') return campaign.type === 'sms'; // Backend already filtered
+    if (campaignFilter === 'bulk') return campaign.type === 'sms'; // Backend already filtered
     return true;
   });
+
+  // Handle tab change - fetch specific data for each tab
+  const handleFilterChange = async (filter: 'all' | 'bulk' | 'single' | 'email') => {
+    setCampaignFilter(filter);
+    setLoading(true);
+    try {
+      if (filter === 'all') {
+        await fetchCampaigns();
+      } else if (filter === 'bulk') {
+        // Fetch only bulk SMS campaigns from dedicated endpoint
+        const response = await api.get('/api/account/campaigns/bulk');
+        console.log('Bulk campaigns response:', response.data);
+        const bulkCampaigns = response.data.payload?.campaigns || response.data.campaigns || [];
+        setCampaigns(bulkCampaigns.map((c: Campaign) => ({ ...c, type: 'sms' })));
+      } else if (filter === 'single') {
+        // Fetch only single SMS campaigns from dedicated endpoint
+        const response = await api.get('/api/account/campaigns/single');
+        console.log('Single campaigns response:', response.data);
+        const singleCampaigns = response.data.payload?.campaigns || response.data.campaigns || [];
+        setCampaigns(singleCampaigns.map((c: Campaign) => ({ ...c, type: 'sms' })));
+      } else if (filter === 'email') {
+        // Fetch only email campaigns
+        const emailResponse = await api.get('/api/account/email_campaigns');
+        console.log('Email campaigns response:', emailResponse.data);
+        const emailCampaigns = emailResponse.data.payload?.campaigns || emailResponse.data.campaigns || [];
+        setCampaigns(emailCampaigns.map((c: Campaign) => ({ ...c, type: 'email' })));
+      }
+    } catch (error) {
+      console.error('Failed to fetch campaigns:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchProjects();
@@ -212,13 +248,16 @@ export default function CampaignsPage() {
       console.log('Fetching all campaigns for account');
       
       // Fetch both SMS and email campaigns
-      const [smsResponse, emailResponse] = await Promise.all([
-        api.get('/api/account/campaigns'),
-        api.get('/api/account/email_campaigns')
-      ]);
-      
+      const smsResponse = await api.get('/api/account/campaigns');
+      console.log('SMS Response:', smsResponse.data);
       const smsCampaigns = smsResponse.data.payload?.campaigns || smsResponse.data.campaigns || [];
+      
+      const emailResponse = await api.get('/api/account/email_campaigns');
+      console.log('Email Response:', emailResponse.data);
       const emailCampaigns = emailResponse.data.payload?.campaigns || emailResponse.data.campaigns || [];
+      
+      console.log('SMS campaigns fetched:', smsCampaigns.length);
+      console.log('Email campaigns fetched:', emailCampaigns.length);
       
       // Mark campaigns with their type for display
       const allCampaigns = [
@@ -239,25 +278,25 @@ export default function CampaignsPage() {
     setRefreshingCampaignId(campaignId);
     try {
       const campaign = campaigns.find(c => c._id === campaignId);
-      if (!campaign?.project) return;
+      if (!campaign) {
+        console.error('Campaign not found in state:', campaignId);
+        return;
+      }
 
-      // Handle project as both string ID and object
-      const projectId = typeof campaign.project === 'string' ? campaign.project : campaign.project._id;
-      const project = projects.find(p => p._id === projectId);
-      if (!project?.apiKey && !project?.projectID) return;
-      
-      const key = project.apiKey || project.projectID;
-      
-      const response = await api.get(`/api/campaigns/${campaignId}`, {
-        headers: { key }
-      });
-      
+      // Use the account-level single campaign endpoint
+      const response = await api.get(`/api/account/campaigns/${campaignId}`);
       const updatedCampaign = response.data.campaign;
       
-      // Update only this campaign in the state
-      setCampaigns(prev => 
-        prev.map(c => c._id === campaignId ? updatedCampaign : c)
-      );
+      if (updatedCampaign) {
+        // Preserve the type from the original campaign
+        const campaignWithType = { ...updatedCampaign, type: campaign.type || 'sms' };
+        
+        // Update only this campaign in the state
+        setCampaigns(prev => 
+          prev.map(c => c._id === campaignId ? campaignWithType : c)
+        );
+        console.log('Campaign refreshed:', campaignId, 'sent:', updatedCampaign.sentCount, '/', updatedCampaign.totalReceivers);
+      }
     } catch (error) {
       console.error(`Failed to fetch campaign ${campaignId}:`, error);
     } finally {
@@ -422,6 +461,43 @@ export default function CampaignsPage() {
       showAlert(error.response?.data?.error || 'Failed to execute campaign', 'error');
     } finally {
       setExecutingCampaignId(null);
+    }
+  };
+
+  const retryCampaign = async (campaignId: string) => {
+    const campaign = campaigns.find(c => c._id === campaignId);
+    if (!campaign) return;
+
+    const remainingCount = campaign.totalReceivers - campaign.sentCount;
+    if (!confirm(`This will retry sending to the ${remainingCount} remaining recipients. Continue?`)) {
+      return;
+    }
+
+    setRetryingCampaignId(campaignId);
+    try {
+      const response = await api.post(`/api/account/campaigns/${campaignId}/retry`);
+      
+      showAlert(
+        `Retry started! Sending to ${response.data.remainingToSend} remaining recipients.`, 
+        'success'
+      );
+      
+      // Update the campaign locally to mark it as actively processing (hide retry button)
+      setCampaigns(prev => 
+        prev.map(c => c._id === campaignId 
+          ? { ...c, status: 'processing' as const, updatedAt: new Date().toISOString() } 
+          : c
+        )
+      );
+      
+      // Refresh just this campaign after a short delay to get updated status
+      setTimeout(() => {
+        fetchSingleCampaign(campaignId);
+      }, 1000);
+    } catch (error: any) {
+      showAlert(error.response?.data?.error || 'Failed to retry campaign', 'error');
+    } finally {
+      setRetryingCampaignId(null);
     }
   };
 
@@ -849,28 +925,28 @@ export default function CampaignsPage() {
                 <Button
                   variant={campaignFilter === 'all' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setCampaignFilter('all')}
+                  onClick={() => handleFilterChange('all')}
                 >
                   All
                 </Button>
                 <Button
                   variant={campaignFilter === 'bulk' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setCampaignFilter('bulk')}
+                  onClick={() => handleFilterChange('bulk')}
                 >
                   Bulk SMS
                 </Button>
                 <Button
                   variant={campaignFilter === 'single' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setCampaignFilter('single')}
+                  onClick={() => handleFilterChange('single')}
                 >
                   Single SMS
                 </Button>
                 <Button
                   variant={campaignFilter === 'email' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setCampaignFilter('email')}
+                  onClick={() => handleFilterChange('email')}
                 >
                   Email
                 </Button>
@@ -990,19 +1066,43 @@ export default function CampaignsPage() {
                             )}
                           </Button>
                           {campaign.status === 'processing' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => fetchSingleCampaign(campaign._id)}
-                              title="Refresh campaign status"
-                              disabled={refreshingCampaignId === campaign._id}
-                            >
-                              {refreshingCampaignId === campaign._id ? (
-                                <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <HugeiconsIcon icon={Refresh01Icon} className="h-4 w-4" />
-                              )}
-                            </Button>
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => fetchSingleCampaign(campaign._id)}
+                                title="Refresh campaign status"
+                                disabled={refreshingCampaignId === campaign._id}
+                              >
+                                {refreshingCampaignId === campaign._id ? (
+                                  <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <HugeiconsIcon icon={Refresh01Icon} className="h-4 w-4" />
+                                )}
+                              </Button>
+                              {/* Only show retry button if campaign hasn't been updated in the last minute (stuck) */}
+                              {(() => {
+                                const lastUpdate = campaign.updatedAt ? new Date(campaign.updatedAt) : new Date(campaign.createdAt);
+                                const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+                                const isStuck = lastUpdate < oneMinuteAgo;
+                                return isStuck ? (
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => retryCampaign(campaign._id)}
+                                    title={`Retry remaining ${campaign.totalReceivers - campaign.sentCount} recipients`}
+                                    disabled={retryingCampaignId === campaign._id}
+                                    className="bg-orange-500 hover:bg-orange-600"
+                                  >
+                                    {retryingCampaignId === campaign._id ? (
+                                      <HugeiconsIcon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <HugeiconsIcon icon={RotateClockwiseIcon} className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                ) : null;
+                              })()}
+                            </>
                           )}
                           {campaign.status === 'pending' && (
                             <Button
