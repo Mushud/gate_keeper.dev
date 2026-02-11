@@ -86,7 +86,20 @@ export const authApi = {
     api.post<{ payload: Account; token: string }>('/api/account/register', data),
   
   login: (data: { email: string; password: string }) =>
-    api.post<{ payload: Account; token: string }>('/api/account/login', data),
+    api.post<{ 
+      message: string; 
+      requiresOTP?: boolean; 
+      reference?: string;
+      maskedPhone?: string;
+      maskedEmail?: string;
+      token?: string;
+    }>('/api/account/login', data),
+  
+  verifyLoginOTP: (data: { reference: string; otp: string }) =>
+    api.post<{ message: string; token: string; account: Account }>('/api/account/verify-login-otp', data),
+  
+  resendLoginOTP: (data: { reference: string }) =>
+    api.post<{ message: string }>('/api/account/resend-login-otp', data),
   
   getProfile: () =>
     api.get<{ payload: Account }>('/api/account/profile'),

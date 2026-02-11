@@ -33,6 +33,7 @@ interface Project {
   projectID: string;
   name: string;
   senderID: string;
+  senderIDApproved?: boolean;
   status: string;
   createdAt: string;
   apiKey?: string;
@@ -441,9 +442,26 @@ export default function ProjectsPage() {
                         </div>
                       </td>
                       <td className="p-4">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-sm font-medium">
-                          {project.senderID}
-                        </span>
+                        <div className="space-y-1">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-sm font-medium">
+                            {project.senderID}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            {project.senderIDApproved ? (
+                              <span className="inline-flex items-center gap-1 text-xs text-green-600">
+                                <HugeiconsIcon icon={Tick02Icon} size={12} strokeWidth={2} />
+                                Verified
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-xs text-amber-600">
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                </svg>
+                                Pending Verification
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </td>
                       <td className="p-4">
                         <div className="flex flex-wrap gap-1.5 max-w-sm">
@@ -697,6 +715,12 @@ export default function ProjectsPage() {
                     <p className="text-xs text-zinc-600">
                       This will appear in SMS messages sent to users
                     </p>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+                      <p className="text-xs text-blue-800">
+                        <strong>Note:</strong> This Sender ID will be unique across our platform. 
+                        Once registered, no one else can use this Sender ID except you.
+                      </p>
+                    </div>
                   </div>
 
                   <div className="flex gap-2 pt-4">

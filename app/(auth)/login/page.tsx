@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,14 +13,22 @@ import { Boxes } from "@/components/ui/background-boxes";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
+  const [sessionMessage, setSessionMessage] = useState("");
 
   useEffect(() => {
     console.log("LoginPage mounted - NO REDIRECTS WILL HAPPEN");
+
+    // Check for session timeout reason
+    const reason = searchParams.get('reason');
+    if (reason === 'timeout') {
+      setSessionMessage("Your session has expired due to inactivity. Please log in again.");
+    }
 
     // Prevent any form submission globally on this page
     const preventSubmit = (e: Event) => {
@@ -35,7 +43,7 @@ export default function LoginPage() {
     return () => {
       document.removeEventListener("submit", preventSubmit, true);
     };
-  }, []);
+  }, [searchParams]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -58,15 +66,32 @@ export default function LoginPage() {
     try {
       const result = await authApi.login({ email, password });
       
-      // Store token
-      if (result.data?.token) {
+      // Check if OTP verification is required
+      if (result.data?.requiresOTP && result.data?.reference) {
+        setSuccess("Credentials verified! Redirecting to OTP verification...");
+        
+        // Build query params for OTP verification page
+        const params = new URLSearchParams({
+          reference: result.data.reference,
+        });
+        if (result.data.maskedPhone) {
+          params.append("phone", result.data.maskedPhone);
+        }
+        if (result.data.maskedEmail) {
+          params.append("email", result.data.maskedEmail);
+        }
+        
+        setTimeout(() => {
+          router.push(`/verify-otp?${params.toString()}`);
+        }, 200);
+      } else if (result.data?.token) {
+        // Direct login (if OTP not required - fallback)
         localStorage.setItem('token', result.data.token);
         setSuccess("Login successful! Redirecting...");
         
-        // Use window.location for a full page navigation to ensure AuthProvider reloads
         setTimeout(() => {
           window.location.href = '/dashboard';
-        }, 500);
+        }, 200);
       }
     } catch (err: any) {
       setError(err.response?.data?.error || err.message || "Login failed");
@@ -161,6 +186,15 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-4">
+            {sessionMessage && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-amber-800">
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p className="text-sm">{sessionMessage}</p>
+              </div>
+            )}
+
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-red-800">
                 <HugeiconsIcon icon={AlertCircleIcon} size={16} strokeWidth={1.5} />
