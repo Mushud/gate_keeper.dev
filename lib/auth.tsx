@@ -146,13 +146,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       const { data } = await authApi.login({ email, password });
-      console.log('Login successful, token:', data.token.substring(0, 20) + '...');
-      console.log('User data:', data.payload);
-      localStorage.setItem('token', data.token);
-      updateLastActivity(); // Start session tracking
-      setUser(data.payload);
-      setLoading(false);
-      router.push('/dashboard');
+      
+      // If OTP is required, don't set token yet (handled by verify-otp page)
+      if (data.requiresOTP) {
+        console.log('OTP verification required');
+        return; // Let the login page handle redirect to OTP verification
+      }
+      
+      // Direct login (fallback if OTP not required)
+      if (data.token) {
+        console.log('Login successful, token:', data.token.substring(0, 20) + '...');
+        localStorage.setItem('token', data.token);
+        updateLastActivity(); // Start session tracking
+        // Fetch user profile after login
+        const profileRes = await authApi.getProfile();
+        setUser(profileRes.data.payload);
+        setLoading(false);
+        router.push('/dashboard');
+      }
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -162,12 +173,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (name: string, email: string, password: string) => {
     try {
       const { data } = await authApi.register({ name, email, password });
-      console.log('Registration successful, token:', data.token.substring(0, 20) + '...');
-      localStorage.setItem('token', data.token);
-      updateLastActivity(); // Start session tracking
-      setUser(data.payload);
-      setLoading(false);
-      router.push('/dashboard');
+      if (data.token) {
+        console.log('Registration successful, token:', data.token.substring(0, 20) + '...');
+        localStorage.setItem('token', data.token);
+        updateLastActivity(); // Start session tracking
+        setUser(data.payload);
+        setLoading(false);
+        router.push('/dashboard');
+      }
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;
