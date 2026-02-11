@@ -86,7 +86,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       group: true,
       items: [
         { name: "One Time Passwords", href: "/developer", icon: "book-open" },
-        { name: "OTP Checkout", href: "/checkout", icon: "shopping-cart" },
+        { name: "OTP Host", href: "/checkout", icon: "shopping-cart" },
       ],
     },
     { name: "KYC Verification", href: "/kyc", icon: "shield" },
