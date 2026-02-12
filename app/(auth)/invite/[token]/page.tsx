@@ -19,6 +19,7 @@ export default function AcceptInvitePage() {
   const [inviteData, setInviteData] = useState<{
     email: string;
     name?: string;
+    phone?: string;
     role: string;
     accountName: string;
     expiresAt: string;
@@ -47,7 +48,7 @@ export default function AcceptInvitePage() {
       setLoading(true);
       const { data } = await membersApi.getInviteDetails(token);
       setInviteData(data);
-      setFormData((prev) => ({ ...prev, name: data.name || '' }));
+      setFormData((prev) => ({ ...prev, name: data.name || '', phone: data.phone || '' }));
     } catch (err: any) {
       setError(err.response?.data?.error || 'Invalid or expired invitation');
     } finally {
@@ -242,12 +243,9 @@ export default function AcceptInvitePage() {
                 <Input
                   id="phone"
                   type="tel"
-                  required
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  onKeyDown={handleKeyDown}
-                  placeholder="+233 XX XXX XXXX"
-                  className="mt-1.5"
+                  disabled
+                  className="mt-1.5 bg-zinc-100 dark:bg-zinc-800"
                 />
                 <p className="text-xs text-zinc-500 mt-1">For receiving OTP codes during login</p>
               </div>

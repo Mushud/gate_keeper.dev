@@ -173,7 +173,7 @@ export const membersApi = {
     api.post<{ message: string; memberId: string; role: string }>('/api/account/members/invite', data),
   
   getInviteDetails: (token: string) =>
-    api.get<{ email: string; name?: string; role: string; accountName: string; expiresAt: string }>(`/api/account/members/invite/${token}`),
+    api.get<{ email: string; name?: string; phone?: string; role: string; accountName: string; expiresAt: string }>(`/api/account/members/invite/${token}`),
   
   acceptInvite: (data: { token: string; name?: string; phone?: string; password: string }) =>
     api.post<{ message: string; email: string; accountName: string; role: string }>('/api/account/members/accept-invite', data),
