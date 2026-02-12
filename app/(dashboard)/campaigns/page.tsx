@@ -172,6 +172,12 @@ export default function CampaignsPage() {
   const [receivers, setReceivers] = useState('');
   const [campaignType, setCampaignType] = useState<'sms' | 'email'>('sms');
   
+  // Template/Mail-merge state
+  const [isTemplated, setIsTemplated] = useState(false);
+  const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
+  const [receiverData, setReceiverData] = useState<Array<{contact: string; variables: Record<string, string>}>>([]);
+  const [messageInputRef, setMessageInputRef] = useState<HTMLTextAreaElement | null>(null);
+  
   // Show alert modal
   const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setAlertMessage(message);
@@ -402,10 +408,11 @@ export default function CampaignsPage() {
         // Create campaign with first chunk (up to 2500)
         const firstChunkSize = 2500;
         const firstChunk = receiversArray.slice(0, firstChunkSize);
+        const firstChunkData = isTemplated ? receiverData.slice(0, firstChunkSize) : [];
         
         const payload = campaignType === 'sms' 
-          ? { name, description, message, receivers: firstChunk }
-          : { name, description, subject, message, receivers: firstChunk };
+          ? { name, description, message, receivers: firstChunk, isTemplated, receiverData: firstChunkData }
+          : { name, description, subject, message, receivers: firstChunk, isTemplated, receiverData: firstChunkData };
         
         const createResponse = await api.post(endpoint, payload, { headers: { key } });
         const campaignId = createResponse.data?.campaign?._id;
@@ -420,12 +427,13 @@ export default function CampaignsPage() {
         let uploadedCount = firstChunkSize;
         for (let i = firstChunkSize; i < receiversArray.length; i += firstChunkSize) {
           const chunk = receiversArray.slice(i, i + firstChunkSize);
+          const chunkData = isTemplated ? receiverData.slice(i, i + firstChunkSize) : [];
           const addReceiversEndpoint = campaignType === 'sms' 
             ? `/api/campaigns/${campaignId}/receivers`
             : `/api/email_campaigns/${campaignId}/receivers`;
           
           await api.post(addReceiversEndpoint, 
-            { receivers: chunk }, 
+            { receivers: chunk, receiverData: chunkData }, 
             { headers: { key } }
           );
           uploadedCount += chunk.length;
@@ -439,13 +447,14 @@ export default function CampaignsPage() {
         setSubject('');
         setReceivers('');
         setCampaignType('sms');
+        clearTemplateData();
         fetchCampaigns();
         showAlert(`Campaign created successfully with all ${receiversArray.length.toLocaleString()} recipients!`, 'success');
       } else {
         // Standard flow for small campaigns (under 2500 recipients)
         const payload = campaignType === 'sms' 
-          ? { name, description, message, receivers: receiversArray }
-          : { name, description, subject, message, receivers: receiversArray };
+          ? { name, description, message, receivers: receiversArray, isTemplated, receiverData: isTemplated ? receiverData : [] }
+          : { name, description, subject, message, receivers: receiversArray, isTemplated, receiverData: isTemplated ? receiverData : [] };
         
         await api.post(endpoint, payload, { headers: { key } });
         
@@ -456,6 +465,7 @@ export default function CampaignsPage() {
         setSubject('');
         setReceivers('');
         setCampaignType('sms');
+        clearTemplateData();
         fetchCampaigns();
         showAlert('Campaign created successfully!', 'success');
       }
@@ -608,13 +618,18 @@ export default function CampaignsPage() {
   };
 
   const downloadSampleExcel = () => {
-    // Create sample data
-    const sampleData = [
-      { PhoneNumber: '233241234567', Name: 'John Doe' },
-      { PhoneNumber: '233201234567', Name: 'Jane Smith' },
-      { PhoneNumber: '233551234567', Name: 'Bob Johnson' },
-      { PhoneNumber: '233261234567', Name: 'Alice Brown' },
-    ];
+    // Create sample data with template columns
+    const sampleData = campaignType === 'email' 
+      ? [
+          { Email: 'john@example.com', Name: 'John Doe', Amount: '500', DueDate: '15th Feb' },
+          { Email: 'jane@example.com', Name: 'Jane Smith', Amount: '750', DueDate: '20th Feb' },
+          { Email: 'bob@example.com', Name: 'Bob Johnson', Amount: '1200', DueDate: '25th Feb' },
+        ]
+      : [
+          { PhoneNumber: '233241234567', Name: 'John Doe', Amount: '500', DueDate: '15th Feb' },
+          { PhoneNumber: '233201234567', Name: 'Jane Smith', Amount: '750', DueDate: '20th Feb' },
+          { PhoneNumber: '233551234567', Name: 'Bob Johnson', Amount: '1200', DueDate: '25th Feb' },
+        ];
 
     // Create worksheet
     const ws = XLSX.utils.json_to_sheet(sampleData);
@@ -624,7 +639,7 @@ export default function CampaignsPage() {
     XLSX.utils.book_append_sheet(wb, ws, 'Recipients');
     
     // Generate and download
-    XLSX.writeFile(wb, 'campaign_recipients_sample.xlsx');
+    XLSX.writeFile(wb, campaignType === 'email' ? 'email_campaign_sample.xlsx' : 'sms_campaign_sample.xlsx');
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -642,72 +657,107 @@ export default function CampaignsPage() {
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         
-        // Convert to JSON
+        // Convert to JSON (keeping all columns)
         const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet);
         
-        // Extract phone numbers (look for common column names)
-        const phoneNumbers = jsonData.map((row: any) => {
-          // Try different possible column names
-          return row.PhoneNumber || row.phoneNumber || row.Phone || row.phone || 
-                 row.Number || row.number || row.Mobile || row.mobile || 
-                 Object.values(row)[0]; // Fallback to first column
-        }).filter((num: any) => num) // Remove empty values
-          .map((num: any) => {
-            // Normalize phone numbers for SMS campaigns
-            if (campaignType === 'sms') {
-              let n = String(num).trim();
-              // If 9 digits, prepend 0
-              if (n.length === 9 && /^\d{9}$/.test(n)) {
-                n = '0' + n;
-              }
-              // If starts with 0, replace with 233
-              if (n.startsWith('0')) {
-                return '233' + n.substring(1);
-              }
-              return n;
-            }
-            return String(num).trim();
-          });
+        if (jsonData.length === 0) {
+          showAlert('The file appears to be empty.', 'error');
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          return;
+        }
         
-        // Get existing numbers
+        // Get all column names from first row
+        const allColumns = Object.keys(jsonData[0]);
+        
+        // Identify contact column (phone or email)
+        const contactColumnNames = campaignType === 'email'
+          ? ['Email', 'email', 'EMAIL', 'E-mail', 'e-mail', 'EmailAddress', 'email_address']
+          : ['PhoneNumber', 'phoneNumber', 'Phone', 'phone', 'Number', 'number', 'Mobile', 'mobile', 'PHONE', 'MOBILE'];
+        
+        const contactColumn = allColumns.find(col => contactColumnNames.includes(col)) || allColumns[0];
+        
+        // Get template columns (all columns except the contact column)
+        const templateColumns = allColumns.filter(col => col !== contactColumn);
+        
+        // Parse receiver data with variables
+        const parsedReceiverData: Array<{contact: string; variables: Record<string, string>}> = [];
+        const contacts: string[] = [];
+        
+        jsonData.forEach((row: any) => {
+          let contact = String(row[contactColumn] || '').trim();
+          if (!contact) return;
+          
+          // Normalize phone numbers for SMS campaigns
+          if (campaignType === 'sms') {
+            // If 9 digits, prepend 0
+            if (contact.length === 9 && /^\d{9}$/.test(contact)) {
+              contact = '0' + contact;
+            }
+            // If starts with 0, replace with 233
+            if (contact.startsWith('0')) {
+              contact = '233' + contact.substring(1);
+            }
+          }
+          
+          // Extract template variables
+          const variables: Record<string, string> = {};
+          templateColumns.forEach(col => {
+            variables[col] = String(row[col] || '');
+          });
+          
+          contacts.push(contact);
+          parsedReceiverData.push({ contact, variables });
+        });
+        
+        // Detect if this is a templated campaign (has extra columns beyond contact)
+        const hasTemplateData = templateColumns.length > 0;
+        
+        // Get existing numbers for deduplication
         const existingReceivers = receivers.trim();
         const existingNumbers = existingReceivers 
           ? existingReceivers.split(/[\n,\s]+/).map(n => n.trim()).filter(n => n)
           : [];
-        
-        // Create a Set for fast lookup and remove duplicates
         const existingSet = new Set(existingNumbers);
         
-        // Filter out numbers that already exist
-        const newNumbers = phoneNumbers.filter((num: any) => !existingSet.has(String(num)));
+        // Filter out duplicates
+        const newReceiverData = parsedReceiverData.filter(r => !existingSet.has(r.contact));
+        const newContacts = contacts.filter(c => !existingSet.has(c));
         
-        if (newNumbers.length === 0) {
-          showAlert('All phone numbers from the file already exist in the list.', 'error');
-          if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-          }
+        if (newContacts.length === 0) {
+          showAlert(`All ${campaignType === 'email' ? 'emails' : 'phone numbers'} from the file already exist in the list.`, 'error');
+          if (fileInputRef.current) fileInputRef.current.value = '';
           return;
         }
         
-        // Append only new numbers to existing textarea content
+        // Update state
         const newContent = existingReceivers 
-          ? existingReceivers + '\n' + newNumbers.join('\n')
-          : newNumbers.join('\n');
+          ? existingReceivers + '\n' + newContacts.join('\n')
+          : newContacts.join('\n');
         setReceivers(newContent);
         
-        // Reset file input
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
+        // If template data found, enable template mode
+        if (hasTemplateData) {
+          setIsTemplated(true);
+          setDetectedColumns(templateColumns);
+          // Merge with existing receiver data
+          setReceiverData(prev => [...prev, ...newReceiverData]);
         }
         
-        const skipped = phoneNumbers.length - newNumbers.length;
-        const message = skipped > 0 
-          ? `Added ${newNumbers.length} new phone numbers (${skipped} duplicates skipped)`
-          : `Added ${newNumbers.length} phone numbers from file`;
-        showAlert(message, 'success');
+        // Reset file input
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        
+        const skipped = contacts.length - newContacts.length;
+        let alertMsg = skipped > 0 
+          ? `Added ${newContacts.length} recipients (${skipped} duplicates skipped)`
+          : `Added ${newContacts.length} recipients from file`;
+        
+        if (hasTemplateData) {
+          alertMsg += `. Template columns detected: ${templateColumns.join(', ')}`;
+        }
+        showAlert(alertMsg, 'success');
       } catch (error) {
         console.error('Error reading file:', error);
-        showAlert('Failed to read file. Please make sure it\'s a valid Excel or CSV file with phone numbers.', 'error');
+        showAlert('Failed to read file. Please make sure it\'s a valid Excel or CSV file.', 'error');
       }
     };
     
@@ -717,6 +767,44 @@ export default function CampaignsPage() {
     } else {
       reader.readAsBinaryString(file);
     }
+  };
+
+  // Insert placeholder into message at cursor position
+  const insertPlaceholder = (columnName: string) => {
+    const placeholder = `{{${columnName}}}`;
+    if (messageInputRef) {
+      const start = messageInputRef.selectionStart;
+      const end = messageInputRef.selectionEnd;
+      const newMessage = message.substring(0, start) + placeholder + message.substring(end);
+      setMessage(newMessage);
+      // Set cursor position after placeholder
+      setTimeout(() => {
+        messageInputRef.focus();
+        messageInputRef.setSelectionRange(start + placeholder.length, start + placeholder.length);
+      }, 0);
+    } else {
+      setMessage(message + placeholder);
+    }
+  };
+
+  // Generate preview message using first row of data
+  const getPreviewMessage = () => {
+    if (!isTemplated || receiverData.length === 0) return message;
+    const firstRow = receiverData[0];
+    let preview = message;
+    // Replace all {{columnName}} placeholders with actual values
+    detectedColumns.forEach(col => {
+      const regex = new RegExp(`\\{\\{${col}\\}\\}`, 'g');
+      preview = preview.replace(regex, firstRow.variables[col] || `[${col}]`);
+    });
+    return preview;
+  };
+
+  // Clear template data when switching campaign type or clearing receivers
+  const clearTemplateData = () => {
+    setIsTemplated(false);
+    setDetectedColumns([]);
+    setReceiverData([]);
   };
 
   return (
@@ -848,9 +936,10 @@ export default function CampaignsPage() {
                   <Label htmlFor="message">{campaignType === 'email' ? 'Email Body' : 'SMS Message'}</Label>
                   <Textarea
                     id="message"
+                    ref={(el) => setMessageInputRef(el)}
                     placeholder={campaignType === 'email' 
-                      ? "Dear [name],\n\nWe have special offers just for you! Click the link below to explore:\nhttps://example.com/offers"
-                      : "Hi [name], we have special offers just for you!"}
+                      ? "Dear {{Name}},\n\nYour payment of GHS {{Amount}} is due on {{DueDate}}.\n\nPlease make payment to avoid service interruption."
+                      : "Hi {{Name}}, your payment of GHS {{Amount}} is due on {{DueDate}}. Please pay to avoid interruption."}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     rows={campaignType === 'email' ? 8 : 5}
@@ -858,13 +947,48 @@ export default function CampaignsPage() {
                     required
                   />
                   <p className="text-xs text-muted-foreground">
-                    Use [name] placeholder to personalize messages. {message.length} / 1600 characters
+                    {isTemplated 
+                      ? `Use {{ColumnName}} placeholders from your Excel. ${message.length} / 1600 characters`
+                      : `Upload Excel with extra columns to enable personalized templates. ${message.length} / 1600 characters`}
                     {campaignType === 'sms' && message.length > 0 && (
                       <span className="ml-2 font-medium text-blue-600">
                         • {Math.ceil(message.length / 160)} credit{Math.ceil(message.length / 160) > 1 ? 's' : ''} per SMS
                       </span>
                     )}
                   </p>
+                  
+                  {/* Template placeholders - shown when Excel with extra columns is uploaded */}
+                  {isTemplated && detectedColumns.length > 0 && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-xs font-medium text-blue-800 mb-2">
+                        Available Placeholders (click to insert):
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {detectedColumns.map(col => (
+                          <button
+                            key={col}
+                            type="button"
+                            onClick={() => insertPlaceholder(col)}
+                            className="px-2 py-1 text-xs font-mono bg-blue-100 hover:bg-blue-200 text-blue-800 rounded border border-blue-300 transition-colors"
+                          >
+                            {`{{${col}}}`}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      {/* Preview section */}
+                      {message && receiverData.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-blue-200">
+                          <p className="text-xs font-medium text-blue-800 mb-1">
+                           Preview (using first recipient's data):
+                          </p>
+                          <p className="text-sm text-blue-900 bg-white p-2 rounded border border-blue-200 whitespace-pre-wrap">
+                            {getPreviewMessage()}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">

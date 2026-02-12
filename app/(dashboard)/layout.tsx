@@ -25,7 +25,7 @@ import {
   Building06Icon,
   UserIcon,
   Tick01Icon,
-  RepeatIcon,
+  ArrowDataTransferHorizontalIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
@@ -388,7 +388,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 onClick={() => setShowAccountSwitcher(!showAccountSwitcher)}
                 className="w-full flex items-center gap-3 px-4 py-3 bg-zinc-900 rounded-lg border border-zinc-700 hover:border-zinc-600 transition-colors"
               >
-                <HugeiconsIcon icon={RepeatIcon} size={18} strokeWidth={1.5} className="text-zinc-400" />
+                <HugeiconsIcon icon={ArrowDataTransferHorizontalIcon} size={18} strokeWidth={1.5} className="text-white" />
                 <div className="flex-1 text-left">
                   <div className="text-xs text-zinc-400">Current Account</div>
                   <div className="text-sm font-medium text-white truncate">{user.name}</div>
