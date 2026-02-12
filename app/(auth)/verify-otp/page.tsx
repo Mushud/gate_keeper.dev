@@ -105,6 +105,27 @@ function VerifyOTPContent() {
       
       if (result.data?.token) {
         localStorage.setItem('token', result.data.token);
+        
+        // Store role and member info
+        const role = result.data.role || 'admin';
+        const isMember = result.data.isMember || false;
+        localStorage.setItem('userRole', role);
+        localStorage.setItem('isMember', String(isMember));
+        
+        if (result.data.member) {
+          localStorage.setItem('memberInfo', JSON.stringify(result.data.member));
+        }
+        
+        // Fetch and store accessible accounts
+        try {
+          const accountsRes = await authApi.getAccessibleAccounts();
+          if (accountsRes.data?.accounts) {
+            localStorage.setItem('accessibleAccounts', JSON.stringify(accountsRes.data.accounts));
+          }
+        } catch {
+          // Non-critical, ignore errors
+        }
+        
         setSuccess("Verification successful! Redirecting...");
         
         setTimeout(() => {

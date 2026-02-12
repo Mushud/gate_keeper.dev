@@ -1,21 +1,42 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { authApi, Account } from '@/lib/api';
+import { authApi, membersApi, Account, Member } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
 // Session timeout: 3 hours of inactivity
 const SESSION_TIMEOUT_MS = 3 * 60 * 60 * 1000; // 3 hours in milliseconds
 const ACTIVITY_CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
 const LAST_ACTIVITY_KEY = 'lastActivityTime';
+const USER_ROLE_KEY = 'userRole';
+const IS_MEMBER_KEY = 'isMember';
+const MEMBER_INFO_KEY = 'memberInfo';
+const ACCESSIBLE_ACCOUNTS_KEY = 'accessibleAccounts';
+
+type UserRole = 'admin' | 'developer' | 'viewer' | 'owner';
+
+interface AccessibleAccount {
+  accountId: string;
+  accountName: string;
+  isOwner: boolean;
+  role: string;
+  isCurrent?: boolean;
+}
 
 interface AuthContextType {
   user: Account | null;
   loading: boolean;
+  role: UserRole;
+  isMember: boolean;
+  member: Member | null;
+  accessibleAccounts: AccessibleAccount[];
+  hasMultipleAccounts: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  switchAccount: (accountId: string) => Promise<void>;
+  hasPermission: (action: 'create_project' | 'edit_project' | 'delete_project' | 'manage_members' | 'view_billing') => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,7 +45,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Account | null>(null);
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
+  const [role, setRole] = useState<UserRole>('admin');
+  const [isMember, setIsMember] = useState(false);
+  const [member, setMember] = useState<Member | null>(null);
+  const [accessibleAccounts, setAccessibleAccounts] = useState<AccessibleAccount[]>([]);
   const router = useRouter();
+
+  const hasMultipleAccounts = accessibleAccounts.length > 1;
+
+  // Permission helper
+  const hasPermission = useCallback((action: 'create_project' | 'edit_project' | 'delete_project' | 'manage_members' | 'view_billing'): boolean => {
+    switch (action) {
+      case 'create_project':
+        return role === 'admin' || role === 'developer' || role === 'owner';
+      case 'edit_project':
+        return role === 'admin' || role === 'developer' || role === 'owner';
+      case 'delete_project':
+        return role === 'admin' || role === 'owner';
+      case 'manage_members':
+        return role === 'admin' || role === 'owner';
+      case 'view_billing':
+        return true; // All roles can view billing
+      default:
+        return false;
+    }
+  }, [role]);
 
   // Update last activity time
   const updateLastActivity = useCallback(() => {
@@ -44,7 +89,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem(LAST_ACTIVITY_KEY);
+    localStorage.removeItem(USER_ROLE_KEY);
+    localStorage.removeItem(IS_MEMBER_KEY);
+    localStorage.removeItem(MEMBER_INFO_KEY);
+    localStorage.removeItem(ACCESSIBLE_ACCOUNTS_KEY);
     setUser(null);
+    setRole('admin');
+    setIsMember(false);
+    setMember(null);
+    setAccessibleAccounts([]);
     router.push('/login');
   }, [router]);
 
@@ -53,9 +106,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('Session timed out due to inactivity');
     localStorage.removeItem('token');
     localStorage.removeItem(LAST_ACTIVITY_KEY);
+    localStorage.removeItem(USER_ROLE_KEY);
+    localStorage.removeItem(IS_MEMBER_KEY);
+    localStorage.removeItem(MEMBER_INFO_KEY);
+    localStorage.removeItem(ACCESSIBLE_ACCOUNTS_KEY);
     setUser(null);
+    setRole('admin');
+    setIsMember(false);
+    setMember(null);
+    setAccessibleAccounts([]);
     router.push('/login?reason=timeout');
   }, [router]);
+
+  // Switch account function
+  const switchAccount = useCallback(async (accountId: string) => {
+    try {
+      setLoading(true);
+      const { data } = await authApi.switchAccount(accountId);
+      
+      // Update token
+      localStorage.setItem('token', data.token);
+      
+      // Update role and member info
+      const newRole = data.isMember ? data.role : 'owner';
+      setRole(newRole as UserRole);
+      setIsMember(data.isMember);
+      setMember(data.member || null);
+      
+      localStorage.setItem(USER_ROLE_KEY, newRole);
+      localStorage.setItem(IS_MEMBER_KEY, data.isMember.toString());
+      if (data.member) {
+        localStorage.setItem(MEMBER_INFO_KEY, JSON.stringify(data.member));
+      } else {
+        localStorage.removeItem(MEMBER_INFO_KEY);
+      }
+      
+      // Update accessible accounts with current marker
+      if (data.accessibleAccounts) {
+        setAccessibleAccounts(data.accessibleAccounts);
+        localStorage.setItem(ACCESSIBLE_ACCOUNTS_KEY, JSON.stringify(data.accessibleAccounts));
+      }
+      
+      // Refresh user profile
+      const profileRes = await authApi.getProfile();
+      setUser(profileRes.data.payload);
+      updateLastActivity();
+      
+      // Redirect to dashboard
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Failed to switch account:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [router, updateLastActivity]);
 
   useEffect(() => {
     if (!authChecked) {
@@ -123,6 +228,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('Auth check successful, user:', data.payload);
         setUser(data.payload);
         updateLastActivity();
+        
+        // Restore role/member info from localStorage
+        const storedRole = localStorage.getItem(USER_ROLE_KEY) as UserRole | null;
+        const storedIsMember = localStorage.getItem(IS_MEMBER_KEY) === 'true';
+        const storedMemberInfo = localStorage.getItem(MEMBER_INFO_KEY);
+        const storedAccessibleAccounts = localStorage.getItem(ACCESSIBLE_ACCOUNTS_KEY);
+        
+        if (storedRole) {
+          setRole(storedRole);
+        }
+        setIsMember(storedIsMember);
+        if (storedMemberInfo) {
+          try {
+            setMember(JSON.parse(storedMemberInfo));
+          } catch {
+            setMember(null);
+          }
+        }
+        
+        // Restore accessible accounts from localStorage or fetch them
+        if (storedAccessibleAccounts) {
+          try {
+            setAccessibleAccounts(JSON.parse(storedAccessibleAccounts));
+          } catch {
+            setAccessibleAccounts([]);
+          }
+        } else {
+          // Fetch accessible accounts if not cached
+          try {
+            const accountsRes = await authApi.getAccessibleAccounts();
+            if (accountsRes.data?.accounts) {
+              setAccessibleAccounts(accountsRes.data.accounts);
+              localStorage.setItem(ACCESSIBLE_ACCOUNTS_KEY, JSON.stringify(accountsRes.data.accounts));
+            }
+          } catch {
+            // Ignore errors - not critical
+            console.log('Could not fetch accessible accounts');
+          }
+        }
       } else {
         console.log('No token found in localStorage');
       }
@@ -136,7 +280,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       localStorage.removeItem('token');
       localStorage.removeItem(LAST_ACTIVITY_KEY);
+      localStorage.removeItem(USER_ROLE_KEY);
+      localStorage.removeItem(IS_MEMBER_KEY);
+      localStorage.removeItem(MEMBER_INFO_KEY);
+      localStorage.removeItem(ACCESSIBLE_ACCOUNTS_KEY);
       setUser(null);
+      setRole('admin');
+      setIsMember(false);
+      setMember(null);
+      setAccessibleAccounts([]);
     } finally {
       setLoading(false);
       setAuthChecked(true);
@@ -192,6 +344,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data } = await authApi.getProfile();
       setUser(data.payload);
       updateLastActivity();
+      
+      // Also refresh member data if user is a member
+      if (isMember) {
+        try {
+          const memberProfile = await membersApi.getProfile();
+          const updatedMember = {
+            memberId: memberProfile.data.memberId,
+            email: memberProfile.data.email,
+            name: memberProfile.data.name,
+            phone: memberProfile.data.phone,
+            role: memberProfile.data.role as 'admin' | 'developer' | 'viewer',
+            status: memberProfile.data.status as 'pending' | 'active' | 'disabled',
+            createdAt: memberProfile.data.createdAt,
+          };
+          setMember(updatedMember);
+          localStorage.setItem(MEMBER_INFO_KEY, JSON.stringify(updatedMember));
+        } catch (memberError) {
+          console.error('Failed to refresh member profile:', memberError);
+        }
+      }
     } catch (error: any) {
       console.error('Failed to refresh user:', error);
       // If token is expired/invalidated during refresh, logout
@@ -202,7 +374,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, role, isMember, member, accessibleAccounts, hasMultipleAccounts, login, register, logout, refreshUser, switchAccount, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );

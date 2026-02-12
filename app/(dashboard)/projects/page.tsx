@@ -38,6 +38,7 @@ interface Project {
   createdAt: string;
   apiKey?: string;
   services?: string[];
+  createdBy?: string;
 }
 
 interface ProjectSettings {
@@ -130,7 +131,7 @@ const Grid = ({ pattern, size }: { pattern?: number[][]; size?: number }) => {
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, hasPermission, isMember, role } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -353,15 +354,17 @@ export default function ProjectsPage() {
             Manage your OTP projects and API keys
           </p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <HugeiconsIcon
-            icon={Add01Icon}
-            size={18}
-            strokeWidth={1.5}
-            className="mr-2"
-          />
-          Create Project
-        </Button>
+        {hasPermission("create_project") && (
+          <Button onClick={() => setShowCreateModal(true)}>
+            <HugeiconsIcon
+              icon={Add01Icon}
+              size={18}
+              strokeWidth={1.5}
+              className="mr-2"
+            />
+            Create Project
+          </Button>
+        )}
       </div>
 
       {(error || success) && (
@@ -386,16 +389,37 @@ export default function ProjectsPage() {
         ) : null}
         {!loading && projects.length === 0 && (
           <div className="col-span-full text-center py-12">
-            <p className="text-zinc-600 mb-4">No projects yet</p>
-            <Button onClick={() => setShowCreateModal(true)}>
-              <HugeiconsIcon
-                icon={Add01Icon}
-                size={18}
-                strokeWidth={1.5}
-                className="mr-2"
-              />
-              Create Your First Project
-            </Button>
+            {isMember && (role === 'developer' || role === 'viewer') ? (
+              <>
+                <div className="mx-auto w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mb-4">
+                  <HugeiconsIcon
+                    icon={Settings01Icon}
+                    size={28}
+                    strokeWidth={1.5}
+                    className="text-zinc-400"
+                  />
+                </div>
+                <p className="text-zinc-900 font-medium mb-2">No project access</p>
+                <p className="text-zinc-600 text-sm max-w-md mx-auto">
+                  You haven't been assigned to any projects yet. Contact your admin to be added to a project.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-zinc-600 mb-4">No projects yet</p>
+                {hasPermission("create_project") && (
+                  <Button onClick={() => setShowCreateModal(true)}>
+                    <HugeiconsIcon
+                      icon={Add01Icon}
+                      size={18}
+                      strokeWidth={1.5}
+                      className="mr-2"
+                    />
+                    Create Your First Project
+                  </Button>
+                )}
+              </>
+            )}
           </div>
         )}
         {!loading && projects.length > 0 && (
@@ -623,44 +647,50 @@ export default function ProjectsPage() {
                       </td>
                       <td className="p-4">
                         <div className="flex items-center justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleOpenSettings(project)}
-                          >
-                            <HugeiconsIcon
-                              icon={Settings01Icon}
-                              size={14}
-                              strokeWidth={1.5}
-                              className="mr-1"
-                            />
-                            Settings
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleRegenerateKey(project._id)}
-                          >
-                            <HugeiconsIcon
-                              icon={Refresh01Icon}
-                              size={14}
-                              strokeWidth={1.5}
-                              className="mr-1"
-                            />
-                            Regenerate
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDeleteProject(project._id)}
-                          >
-                            <HugeiconsIcon
-                              icon={Delete01Icon}
-                              size={16}
-                              strokeWidth={1.5}
-                              className="text-red-600"
-                            />
-                          </Button>
+                          {hasPermission("edit_project") && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenSettings(project)}
+                              >
+                                <HugeiconsIcon
+                                  icon={Settings01Icon}
+                                  size={14}
+                                  strokeWidth={1.5}
+                                  className="mr-1"
+                                />
+                                Settings
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleRegenerateKey(project._id)}
+                              >
+                                <HugeiconsIcon
+                                  icon={Refresh01Icon}
+                                  size={14}
+                                  strokeWidth={1.5}
+                                  className="mr-1"
+                                />
+                                Regenerate
+                              </Button>
+                            </>
+                          )}
+                          {hasPermission("delete_project") && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDeleteProject(project._id)}
+                            >
+                              <HugeiconsIcon
+                                icon={Delete01Icon}
+                                size={16}
+                                strokeWidth={1.5}
+                                className="text-red-600"
+                              />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -8,8 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { HugeiconsIcon } from '@hugeicons/react';
-import { ShieldIcon, AlertCircleIcon } from '@hugeicons/core-free-icons';
+import { ShieldIcon, AlertCircleIcon, Building06Icon, UserIcon } from '@hugeicons/core-free-icons';
 import { Boxes } from "@/components/ui/background-boxes";
+
+interface AccessibleAccount {
+  accountId: string;
+  accountName: string;
+  role: string;
+  isOwner: boolean;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,6 +27,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [sessionMessage, setSessionMessage] = useState("");
+  
+  // Multi-account selection state
+  const [showAccountSelect, setShowAccountSelect] = useState(false);
+  const [accessibleAccounts, setAccessibleAccounts] = useState<AccessibleAccount[]>([]);
 
   useEffect(() => {
     console.log("LoginPage mounted - NO REDIRECTS WILL HAPPEN");
@@ -50,21 +61,36 @@ export default function LoginPage() {
       e.preventDefault();
       e.stopPropagation();
       console.log("Enter key intercepted and prevented");
-      handleLogin();
+      if (!showAccountSelect) {
+        handleLogin();
+      }
     }
   };
 
-  const handleLogin = async () => {
+  const handleLogin = async (selectedAccountId?: string) => {
     console.log("=== LOGIN BUTTON CLICKED (handleLogin called) ===");
     console.log("Email:", email);
     console.log("Password length:", password.length);
+    console.log("Selected Account ID:", selectedAccountId);
 
     setError("");
     setSuccess("");
     setLoading(true);
 
     try {
-      const result = await authApi.login({ email, password });
+      const result = await authApi.login({ 
+        email, 
+        password,
+        accountId: selectedAccountId 
+      });
+      
+      // Check if account selection is required
+      if (result.data?.selectAccount && result.data?.accounts) {
+        setAccessibleAccounts(result.data.accounts);
+        setShowAccountSelect(true);
+        setLoading(false);
+        return;
+      }
       
       // Check if OTP verification is required
       if (result.data?.requiresOTP && result.data?.reference) {
@@ -97,6 +123,17 @@ export default function LoginPage() {
       setError(err.response?.data?.error || err.message || "Login failed");
       setLoading(false);
     }
+  };
+
+  const handleSelectAccount = (account: AccessibleAccount) => {
+    setShowAccountSelect(false);
+    handleLogin(account.accountId);
+  };
+
+  const handleBackToLogin = () => {
+    setShowAccountSelect(false);
+    setAccessibleAccounts([]);
+    setPassword("");
   };
 
   return (
@@ -179,9 +216,13 @@ export default function LoginPage() {
           </div>
 
           <div className="mb-8">
-            <h2 className="text-3xl font-bold text-zinc-900 mb-2">Welcome back</h2>
+            <h2 className="text-3xl font-bold text-zinc-900 mb-2">
+              {showAccountSelect ? "Select Account" : "Welcome back"}
+            </h2>
             <p className="text-zinc-600">
-              Sign in to your account to continue
+              {showAccountSelect 
+                ? "You have access to multiple accounts. Select one to continue."
+                : "Sign in to your account to continue"}
             </p>
           </div>
 
@@ -211,52 +252,95 @@ export default function LoginPage() {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="james.klottey@gmail.om"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={loading}
-                autoComplete="off"
-              />
-            </div>
+            {/* Account Selection UI */}
+            {showAccountSelect ? (
+              <div className="space-y-3">
+                {accessibleAccounts.map((account) => (
+                  <button
+                    key={account.accountId}
+                    onClick={() => handleSelectAccount(account)}
+                    disabled={loading}
+                    className="w-full p-4 border border-zinc-200 rounded-lg hover:border-zinc-400 hover:bg-zinc-50 transition-all text-left flex items-center gap-4 disabled:opacity-50"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-zinc-100 flex items-center justify-center">
+                      <HugeiconsIcon 
+                        icon={account.isOwner ? Building06Icon : UserIcon} 
+                        size={20} 
+                        strokeWidth={1.5}
+                        className="text-zinc-600"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium text-zinc-900">{account.accountName}</div>
+                      <div className="text-sm text-zinc-500 capitalize">
+                        {account.isOwner ? "Owner" : account.role}
+                      </div>
+                    </div>
+                    {account.isOwner && (
+                      <span className="text-xs bg-zinc-900 text-white px-2 py-1 rounded">
+                        Owner
+                      </span>
+                    )}
+                  </button>
+                ))}
+                
+                <button
+                  onClick={handleBackToLogin}
+                  className="w-full text-center text-sm text-zinc-600 hover:text-zinc-900 mt-4"
+                >
+                  ← Use different credentials
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="james.klottey@gmail.om"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    disabled={loading}
+                    autoComplete="off"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={loading}
-                autoComplete="off"
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    disabled={loading}
+                    autoComplete="off"
+                  />
+                </div>
 
-            <Button
-              type="button"
-              onClick={handleLogin}
-              className="w-full h-11 bg-zinc-900 hover:bg-black text-white font-medium transition-colors"
-              disabled={loading}
-            >
-              {loading ? "Signing in..." : "Sign in"}
-            </Button>
+                <Button
+                  type="button"
+                  onClick={() => handleLogin()}
+                  className="w-full h-11 bg-zinc-900 hover:bg-black text-white font-medium transition-colors"
+                  disabled={loading}
+                >
+                  {loading ? "Signing in..." : "Sign in"}
+                </Button>
 
-            <div className="text-center text-sm text-zinc-600">
-              Don't have an account?{" "}
-              <Link
-                href="/register"
-                className="text-zinc-900 font-medium hover:underline"
-              >
-                Sign up
-              </Link>
-            </div>
+                <div className="text-center text-sm text-zinc-600">
+                  Don't have an account?{" "}
+                  <Link
+                    href="/register"
+                    className="text-zinc-900 font-medium hover:underline"
+                  >
+                    Sign up
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

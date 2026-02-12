@@ -21,17 +21,25 @@ import {
   MailSend01Icon,
   ArrowDown01Icon,
   Mail01Icon,
+  UserGroupIcon,
+  Building06Icon,
+  UserIcon,
+  Tick01Icon,
+  RepeatIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, hasPermission, hasMultipleAccounts, accessibleAccounts, switchAccount, isMember, role } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showAccountSwitcher, setShowAccountSwitcher] = useState(false);
+  const [switchingAccount, setSwitchingAccount] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<string[]>([
     "messaging",
     "authentication",
+    "Settings",
   ]);
 
   const toggleGroup = (groupName: string) => {
@@ -94,7 +102,17 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     { name: "Logs", href: "/logs", icon: "file-text" },
     { name: "Billing", href: "/billing", icon: "credit-card" },
     { name: "Transactions", href: "/transactions", icon: "credit-card" },
-    { name: "Settings", href: "/settings", icon: "settings" },
+    {
+      name: "Settings",
+      icon: "settings",
+      group: true,
+      items: [
+        { name: "Account", href: "/settings", icon: "settings" },
+        ...(hasPermission("manage_members")
+          ? [{ name: "Team", href: "/settings/team", icon: "users" }]
+          : []),
+      ],
+    },
   ];
 
   const renderIcon = (iconName: string) => {
@@ -186,6 +204,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         return (
           <HugeiconsIcon
             icon={Settings02Icon}
+            size={size}
+            strokeWidth={strokeWidth}
+          />
+        );
+      case "users":
+        return (
+          <HugeiconsIcon
+            icon={UserGroupIcon}
             size={size}
             strokeWidth={strokeWidth}
           />
@@ -355,6 +381,72 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             )}
           </div>
 
+          {/* Account Switcher (if multiple accounts) */}
+          {hasMultipleAccounts && (
+            <div className="relative mb-3">
+              <button
+                onClick={() => setShowAccountSwitcher(!showAccountSwitcher)}
+                className="w-full flex items-center gap-3 px-4 py-3 bg-zinc-900 rounded-lg border border-zinc-700 hover:border-zinc-600 transition-colors"
+              >
+                <HugeiconsIcon icon={RepeatIcon} size={18} strokeWidth={1.5} className="text-zinc-400" />
+                <div className="flex-1 text-left">
+                  <div className="text-xs text-zinc-400">Current Account</div>
+                  <div className="text-sm font-medium text-white truncate">{user.name}</div>
+                </div>
+                <span className="text-xs bg-zinc-700 text-zinc-300 px-2 py-0.5 rounded capitalize">
+                  {isMember ? role : 'Owner'}
+                </span>
+              </button>
+              
+              {showAccountSwitcher && (
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl overflow-hidden z-50">
+                  <div className="px-4 py-2 border-b border-zinc-700">
+                    <div className="text-xs font-medium text-zinc-400">Switch Account</div>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {accessibleAccounts.map((account) => {
+                      const isCurrentAccount = account.accountId === user._id;
+                      return (
+                        <button
+                          key={account.accountId}
+                          onClick={async () => {
+                            if (!isCurrentAccount && !switchingAccount) {
+                              setSwitchingAccount(true);
+                              try {
+                                await switchAccount(account.accountId);
+                              } finally {
+                                setSwitchingAccount(false);
+                                setShowAccountSwitcher(false);
+                              }
+                            }
+                          }}
+                          disabled={isCurrentAccount || switchingAccount}
+                          className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-zinc-800 transition-colors text-left ${isCurrentAccount ? 'bg-zinc-800' : ''}`}
+                        >
+                          <div className="w-8 h-8 rounded bg-zinc-700 flex items-center justify-center">
+                            <HugeiconsIcon 
+                              icon={account.isOwner ? Building06Icon : UserIcon} 
+                              size={16} 
+                              strokeWidth={1.5}
+                              className="text-zinc-400"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-white truncate">{account.accountName}</div>
+                            <div className="text-xs text-zinc-500 capitalize">{account.isOwner ? 'Owner' : account.role}</div>
+                          </div>
+                          {isCurrentAccount && (
+                            <HugeiconsIcon icon={Tick01Icon} size={16} strokeWidth={2} className="text-green-500" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center gap-3 px-4 py-2 mb-3 bg-zinc-900 rounded-lg border border-zinc-700">
             <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-white text-sm font-semibold border border-zinc-600">
               {user.name.charAt(0).toUpperCase()}
@@ -365,6 +457,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               </div>
               <div className="text-xs text-zinc-400 truncate">{user.email}</div>
             </div>
+            {isMember && (
+              <span className="text-xs bg-zinc-700 text-zinc-300 px-2 py-0.5 rounded capitalize">
+                {role}
+              </span>
+            )}
           </div>
           <button
             onClick={() => {

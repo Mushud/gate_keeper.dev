@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
-import api from '@/lib/api';
+import api, { membersApi } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +11,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { User03Icon, LockIcon, Mail01Icon, SmartPhone01Icon, SystemUpdateIcon, Key02Icon, CirclePasswordIcon } from '@hugeicons/core-free-icons';
 
 export default function SettingsPage() {
-  const { user, refreshUser } = useAuth();
+  const { user, isMember, member, refreshUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -20,7 +20,7 @@ export default function SettingsPage() {
   const [profileData, setProfileData] = useState({
     name: '',
     email: '',
-    accountHolderNumber: '',
+    phone: '',
   });
 
   // Password form
@@ -30,15 +30,29 @@ export default function SettingsPage() {
     confirmPassword: '',
   });
 
+  // Refresh user/member data on mount to ensure we have latest info (including phone)
   useEffect(() => {
-    if (user) {
+    refreshUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (isMember && member) {
+      // Use member data
+      setProfileData({
+        name: member.name || '',
+        email: member.email || '',
+        phone: member.phone || '',
+      });
+    } else if (user) {
+      // Use account owner data
       setProfileData({
         name: user.name || '',
         email: user.email || '',
-        accountHolderNumber: user.accountHolderNumber || '',
+        phone: user.accountHolderNumber || '',
       });
     }
-  }, [user]);
+  }, [user, isMember, member]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,11 +61,20 @@ export default function SettingsPage() {
 
     try {
       setLoading(true);
-      await api.put('/api/account/profile', {
-        name: profileData.name,
-        email: profileData.email,
-        accountHolderNumber: profileData.accountHolderNumber,
-      });
+      
+      if (isMember) {
+        // Update member profile (name only - phone requires admin)
+        await membersApi.updateProfile({
+          name: profileData.name,
+        });
+      } else {
+        // Update account owner profile
+        await api.put('/api/account/profile', {
+          name: profileData.name,
+          email: profileData.email,
+          accountHolderNumber: profileData.phone,
+        });
+      }
 
       setSuccess('Profile updated successfully!');
       await refreshUser();
@@ -81,10 +104,20 @@ export default function SettingsPage() {
 
     try {
       setLoading(true);
-      await api.post('/api/account/change-password', {
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword,
-      });
+      
+      if (isMember) {
+        // Change member password
+        await membersApi.changePassword({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        });
+      } else {
+        // Change account owner password
+        await api.post('/api/account/change-password', {
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        });
+      }
 
       setSuccess('Password changed successfully!');
       setPasswordData({
@@ -160,8 +193,12 @@ export default function SettingsPage() {
                     onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
                     className="pl-10"
                     required
+                    disabled={isMember}
                   />
                 </div>
+                {isMember && (
+                  <p className="text-xs text-zinc-500">Email cannot be changed. Contact your admin.</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -172,12 +209,16 @@ export default function SettingsPage() {
                     id="phone"
                     type="tel"
                     placeholder="+233241234567"
-                    value={profileData.accountHolderNumber}
-                    onChange={(e) => setProfileData({ ...profileData, accountHolderNumber: e.target.value })}
+                    value={profileData.phone}
+                    onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                     className="pl-10"
                     required
+                    disabled={isMember}
                   />
                 </div>
+                {isMember && (
+                  <p className="text-xs text-zinc-500">Phone number cannot be changed. Contact your admin.</p>
+                )}
               </div>
 
               <Button type="submit" disabled={loading} className="w-full">
@@ -260,29 +301,42 @@ export default function SettingsPage() {
       {/* Account Information */}
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>Account Information</CardTitle>
-          <CardDescription>Your account details and status</CardDescription>
+          <CardTitle>{isMember ? 'Member Information' : 'Account Information'}</CardTitle>
+          <CardDescription>{isMember ? 'Your member details and status' : 'Your account details and status'}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <p className="text-sm text-zinc-600 mb-1">Account ID</p>
+              <p className="text-sm text-zinc-600 mb-1">{isMember ? 'Organization Account' : 'Account ID'}</p>
               <p className="font-mono text-sm bg-zinc-100 px-3 py-2 rounded">
-                {user?.accountID || 'N/A'}
+                {isMember ? (member?.name ? `${member.name}'s Account` : user?.name) : (user?.accountID || 'N/A')}
               </p>
             </div>
             <div>
-              <p className="text-sm text-zinc-600 mb-1">Account Status</p>
-              <span className={`inline-block px-3 py-1 rounded text-sm font-medium ${
-                user?.verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-              }`}>
-                {user?.verified ? 'Verified' : 'Unverified'}
-              </span>
+              <p className="text-sm text-zinc-600 mb-1">{isMember ? 'Role' : 'Account Status'}</p>
+              {isMember ? (
+                <span className={`inline-block px-3 py-1 rounded text-sm font-medium capitalize ${
+                  member?.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+                  member?.role === 'developer' ? 'bg-blue-100 text-blue-800' :
+                  'bg-zinc-100 text-zinc-800'
+                }`}>
+                  {member?.role || 'N/A'}
+                </span>
+              ) : (
+                <span className={`inline-block px-3 py-1 rounded text-sm font-medium ${
+                  user?.verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {user?.verified ? 'Verified' : 'Unverified'}
+                </span>
+              )}
             </div>
             <div>
               <p className="text-sm text-zinc-600 mb-1">Member Since</p>
               <p className="text-sm font-medium">
-                {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                {isMember 
+                  ? (member?.createdAt ? new Date(member.createdAt).toLocaleDateString() : 'N/A')
+                  : (user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A')
+                }
               </p>
             </div>
           </div>
