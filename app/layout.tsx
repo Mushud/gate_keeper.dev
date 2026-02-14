@@ -18,6 +18,12 @@ export const metadata: Metadata = {
     shortcut: '/logo.png',
     apple: '/logo.png',
   },
+  openGraph: {
+    title: "GateKeeperPro - Developer Portal",
+    description: "Manage your OTP projects and API integrations",
+    images: ['/logo.png'],
+    type: 'website',
+  },
 };
 
 export default function RootLayout({
