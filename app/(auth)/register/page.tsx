@@ -7,6 +7,7 @@ import { authApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ShieldIcon, AlertCircleIcon } from '@hugeicons/core-free-icons';
 import { Boxes } from '@/components/ui/background-boxes';
@@ -21,6 +22,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   useEffect(() => {
     console.log('RegisterPage mounted');
@@ -254,7 +256,29 @@ export default function RegisterPage() {
               />
             </div>
 
-            <Button type="button" onClick={handleRegister} className="w-full h-11 bg-zinc-900 hover:bg-black text-white font-medium transition-colors" disabled={loading}>
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="terms"
+                checked={acceptedTerms}
+                onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+                disabled={loading}
+              />
+              <label
+                htmlFor="terms"
+                className="text-sm text-zinc-600 leading-tight cursor-pointer"
+              >
+                I agree to the{' '}
+                <a href="https://gatekeeperpro.cc/terms" className="text-zinc-900 font-medium hover:underline" target="_blank" rel="noopener noreferrer">
+                  Terms and Conditions
+                </a>{' '}
+                and{' '}
+                <a href="https://gatekeeperpro.cc/privacy" className="text-zinc-900 font-medium hover:underline" target="_blank" rel="noopener noreferrer">
+                  Privacy Policy
+                </a>
+              </label>
+            </div>
+
+            <Button type="button" onClick={handleRegister} className="w-full h-11 bg-zinc-900 hover:bg-black text-white font-medium transition-colors" disabled={loading || !acceptedTerms}>
               {loading ? 'Creating account...' : 'Create account'}
             </Button>
 

@@ -7,6 +7,7 @@ import { authApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ShieldIcon, AlertCircleIcon, Building06Icon, UserIcon } from '@hugeicons/core-free-icons';
 import { Boxes } from "@/components/ui/background-boxes";
@@ -31,6 +32,9 @@ export default function LoginPage() {
   // Multi-account selection state
   const [showAccountSelect, setShowAccountSelect] = useState(false);
   const [accessibleAccounts, setAccessibleAccounts] = useState<AccessibleAccount[]>([]);
+  
+  // Terms acceptance state
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   useEffect(() => {
     console.log("LoginPage mounted - NO REDIRECTS WILL HAPPEN");
@@ -321,11 +325,33 @@ export default function LoginPage() {
                   />
                 </div>
 
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="terms"
+                    checked={acceptedTerms}
+                    onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+                    disabled={loading}
+                  />
+                  <label
+                    htmlFor="terms"
+                    className="text-sm text-zinc-600 leading-tight cursor-pointer"
+                  >
+                    I agree to the{" "}
+                    <a href="https://gatekeeperpro.cc/terms" className="text-zinc-900 font-medium hover:underline" target="_blank" rel="noopener noreferrer">
+                      Terms and Conditions
+                    </a>{" "}
+                    and{" "}
+                    <a href="https://gatekeeperpro.cc/privacy" className="text-zinc-900 font-medium hover:underline" target="_blank" rel="noopener noreferrer">
+                      Privacy Policy
+                    </a>
+                  </label>
+                </div>
+
                 <Button
                   type="button"
                   onClick={() => handleLogin()}
                   className="w-full h-11 bg-zinc-900 hover:bg-black text-white font-medium transition-colors"
-                  disabled={loading}
+                  disabled={loading || !acceptedTerms}
                 >
                   {loading ? "Signing in..." : "Sign in"}
                 </Button>
