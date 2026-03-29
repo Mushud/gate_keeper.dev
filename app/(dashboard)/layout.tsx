@@ -65,8 +65,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-zinc-900"></div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative h-10 w-10">
+            <div className="absolute inset-0 rounded-full border-2 border-zinc-100" />
+            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-zinc-800 animate-spin" />
+          </div>
+          <span className="text-sm text-zinc-400 tracking-wide">Loading…</span>
+        </div>
       </div>
     );
   }

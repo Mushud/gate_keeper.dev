@@ -8,8 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { HugeiconsIcon } from '@hugeicons/react';
-import { ShieldIcon, AlertCircleIcon, Building06Icon, UserIcon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  ShieldIcon,
+  AlertCircleIcon,
+  Building06Icon,
+  UserIcon,
+} from "@hugeicons/core-free-icons";
 import { Boxes } from "@/components/ui/background-boxes";
 
 interface AccessibleAccount {
@@ -28,11 +33,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [sessionMessage, setSessionMessage] = useState("");
-  
+
   // Multi-account selection state
   const [showAccountSelect, setShowAccountSelect] = useState(false);
-  const [accessibleAccounts, setAccessibleAccounts] = useState<AccessibleAccount[]>([]);
-  
+  const [accessibleAccounts, setAccessibleAccounts] = useState<
+    AccessibleAccount[]
+  >([]);
+
   // Terms acceptance state
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
@@ -40,9 +47,11 @@ export default function LoginPage() {
     console.log("LoginPage mounted - NO REDIRECTS WILL HAPPEN");
 
     // Check for session timeout reason
-    const reason = searchParams.get('reason');
-    if (reason === 'timeout') {
-      setSessionMessage("Your session has expired due to inactivity. Please log in again.");
+    const reason = searchParams.get("reason");
+    if (reason === "timeout") {
+      setSessionMessage(
+        "Your session has expired due to inactivity. Please log in again.",
+      );
     }
 
     // Prevent any form submission globally on this page
@@ -72,60 +81,66 @@ export default function LoginPage() {
   };
 
   const handleLogin = async (selectedAccountId?: string) => {
-    console.log("=== LOGIN BUTTON CLICKED (handleLogin called) ===");
-    console.log("Email:", email);
-    console.log("Password length:", password.length);
-    console.log("Selected Account ID:", selectedAccountId);
+    // console.log("=== LOGIN BUTTON CLICKED (handleLogin called) ===");
+    // console.log("Email:", email);
+    // console.log("Password length:", password.length);
+    // console.log("Selected Account ID:", selectedAccountId);
 
-    setError("");
-    setSuccess("");
-    setLoading(true);
+    if (acceptedTerms) {
+      setError("");
+      setSuccess("");
+      setLoading(true);
 
-    try {
-      const result = await authApi.login({ 
-        email, 
-        password,
-        accountId: selectedAccountId 
-      });
-      
-      // Check if account selection is required
-      if (result.data?.selectAccount && result.data?.accounts) {
-        setAccessibleAccounts(result.data.accounts);
-        setShowAccountSelect(true);
-        setLoading(false);
-        return;
-      }
-      
-      // Check if OTP verification is required
-      if (result.data?.requiresOTP && result.data?.reference) {
-        setSuccess("Credentials verified! Redirecting to OTP verification...");
-        
-        // Build query params for OTP verification page
-        const params = new URLSearchParams({
-          reference: result.data.reference,
+      try {
+        const result = await authApi.login({
+          email,
+          password,
+          accountId: selectedAccountId,
         });
-        if (result.data.maskedPhone) {
-          params.append("phone", result.data.maskedPhone);
+
+        // Check if account selection is required
+        if (result.data?.selectAccount && result.data?.accounts) {
+          setAccessibleAccounts(result.data.accounts);
+          setShowAccountSelect(true);
+          setLoading(false);
+          return;
         }
-        if (result.data.maskedEmail) {
-          params.append("email", result.data.maskedEmail);
+
+        // Check if OTP verification is required
+        if (result.data?.requiresOTP && result.data?.reference) {
+          setSuccess(
+            "Credentials verified! Redirecting to OTP verification...",
+          );
+
+          // Build query params for OTP verification page
+          const params = new URLSearchParams({
+            reference: result.data.reference,
+          });
+          if (result.data.maskedPhone) {
+            params.append("phone", result.data.maskedPhone);
+          }
+          if (result.data.maskedEmail) {
+            params.append("email", result.data.maskedEmail);
+          }
+
+          setTimeout(() => {
+            router.push(`/verify-otp?${params.toString()}`);
+          }, 200);
+        } else if (result.data?.token) {
+          // Direct login (if OTP not required - fallback)
+          localStorage.setItem("token", result.data.token);
+          setSuccess("Login successful! Redirecting...");
+
+          setTimeout(() => {
+            window.location.href = "/dashboard";
+          }, 200);
         }
-        
-        setTimeout(() => {
-          router.push(`/verify-otp?${params.toString()}`);
-        }, 200);
-      } else if (result.data?.token) {
-        // Direct login (if OTP not required - fallback)
-        localStorage.setItem('token', result.data.token);
-        setSuccess("Login successful! Redirecting...");
-        
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 200);
+      } catch (err: any) {
+        setError(err.response?.data?.error || err.message || "Login failed");
+        setLoading(false);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || err.message || "Login failed");
-      setLoading(false);
+    } else {
+      setError("You must accept the Terms and Conditions to proceed.");
     }
   };
 
@@ -148,16 +163,21 @@ export default function LoginPage() {
         <div className="absolute inset-0 z-0">
           <Boxes />
         </div>
-        
+
         {/* Dark Overlay */}
         <div className="absolute inset-0 z-[1] bg-zinc-950/80 pointer-events-none" />
-        
+
         {/* Content Container */}
         <div className="relative z-10 flex flex-col items-center justify-center flex-1 p-12 pointer-events-auto">
           {/* Logo - Top Left */}
           <div className="absolute top-12 left-12 flex items-center gap-3">
             <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center">
-              <HugeiconsIcon icon={ShieldIcon} size={24} strokeWidth={1.5} className="text-zinc-900" />
+              <HugeiconsIcon
+                icon={ShieldIcon}
+                size={24}
+                strokeWidth={1.5}
+                className="text-zinc-900"
+              />
             </div>
             <div>
               <div className="text-2xl font-bold text-white">GateKeeperPro</div>
@@ -171,26 +191,51 @@ export default function LoginPage() {
                 Secure OTP Verification
               </h1>
               <p className="text-lg text-zinc-300">
-                Enterprise-grade authentication platform trusted by leading organizations.
+                Enterprise-grade authentication platform trusted by leading
+                organizations.
               </p>
             </div>
 
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-white flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="w-5 h-5 text-white flex-shrink-0 mt-1"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <p className="text-zinc-300">Hosted verification pages</p>
               </div>
               <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-white flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="w-5 h-5 text-white flex-shrink-0 mt-1"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <p className="text-zinc-300">RESTful API integration</p>
               </div>
               <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-white flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="w-5 h-5 text-white flex-shrink-0 mt-1"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <p className="text-zinc-300">100 free credits included</p>
               </div>
@@ -210,7 +255,12 @@ export default function LoginPage() {
           <div className="mb-8 lg:hidden">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 rounded-xl bg-zinc-900 flex items-center justify-center">
-                <HugeiconsIcon icon={ShieldIcon} size={24} strokeWidth={1.5} className="text-white" />
+                <HugeiconsIcon
+                  icon={ShieldIcon}
+                  size={24}
+                  strokeWidth={1.5}
+                  className="text-white"
+                />
               </div>
               <div>
                 <div className="text-xl font-bold">GateKeeperPro</div>
@@ -224,7 +274,7 @@ export default function LoginPage() {
               {showAccountSelect ? "Select Account" : "Welcome back"}
             </h2>
             <p className="text-zinc-600">
-              {showAccountSelect 
+              {showAccountSelect
                 ? "You have access to multiple accounts. Select one to continue."
                 : "Sign in to your account to continue"}
             </p>
@@ -233,8 +283,18 @@ export default function LoginPage() {
           <div className="space-y-4">
             {sessionMessage && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-amber-800">
-                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <svg
+                  className="w-5 h-5 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
                 </svg>
                 <p className="text-sm">{sessionMessage}</p>
               </div>
@@ -242,15 +302,29 @@ export default function LoginPage() {
 
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-red-800">
-                <HugeiconsIcon icon={AlertCircleIcon} size={16} strokeWidth={1.5} />
+                <HugeiconsIcon
+                  icon={AlertCircleIcon}
+                  size={16}
+                  strokeWidth={1.5}
+                />
                 <p className="text-sm">{error}</p>
               </div>
             )}
 
             {success && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2 text-green-800">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
                 <p className="text-sm">{success}</p>
               </div>
@@ -267,15 +341,17 @@ export default function LoginPage() {
                     className="w-full p-4 border border-zinc-200 rounded-lg hover:border-zinc-400 hover:bg-zinc-50 transition-all text-left flex items-center gap-4 disabled:opacity-50"
                   >
                     <div className="w-10 h-10 rounded-lg bg-zinc-100 flex items-center justify-center">
-                      <HugeiconsIcon 
-                        icon={account.isOwner ? Building06Icon : UserIcon} 
-                        size={20} 
+                      <HugeiconsIcon
+                        icon={account.isOwner ? Building06Icon : UserIcon}
+                        size={20}
                         strokeWidth={1.5}
                         className="text-zinc-600"
                       />
                     </div>
                     <div className="flex-1">
-                      <div className="font-medium text-zinc-900">{account.accountName}</div>
+                      <div className="font-medium text-zinc-900">
+                        {account.accountName}
+                      </div>
                       <div className="text-sm text-zinc-500 capitalize">
                         {account.isOwner ? "Owner" : account.role}
                       </div>
@@ -287,7 +363,7 @@ export default function LoginPage() {
                     )}
                   </button>
                 ))}
-                
+
                 <button
                   onClick={handleBackToLogin}
                   className="w-full text-center text-sm text-zinc-600 hover:text-zinc-900 mt-4"
@@ -329,7 +405,9 @@ export default function LoginPage() {
                   <Checkbox
                     id="terms"
                     checked={acceptedTerms}
-                    onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+                    onCheckedChange={(checked) =>
+                      setAcceptedTerms(checked as boolean)
+                    }
                     disabled={loading}
                   />
                   <label
@@ -337,11 +415,21 @@ export default function LoginPage() {
                     className="text-sm text-zinc-600 leading-tight cursor-pointer"
                   >
                     I agree to the{" "}
-                    <a href="https://gatekeeperpro.cc/terms" className="text-zinc-900 font-medium hover:underline" target="_blank" rel="noopener noreferrer">
+                    <a
+                      href="https://gatekeeperpro.cc/terms"
+                      className="text-zinc-900 font-medium hover:underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       Terms and Conditions
                     </a>{" "}
                     and{" "}
-                    <a href="https://gatekeeperpro.cc/privacy" className="text-zinc-900 font-medium hover:underline" target="_blank" rel="noopener noreferrer">
+                    <a
+                      href="https://gatekeeperpro.cc/privacy"
+                      className="text-zinc-900 font-medium hover:underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       Privacy Policy
                     </a>
                   </label>

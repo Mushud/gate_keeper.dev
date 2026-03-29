@@ -26,7 +26,7 @@ import {
   Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { CardSkeleton } from "@/components/ui/skeleton";
+import { ProjectsTableSkeleton } from "@/components/ui/skeleton";
 
 interface Project {
   _id: string;
@@ -381,11 +381,9 @@ export default function ProjectsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
-          <>
-            <CardSkeleton />
-            <CardSkeleton />
-            <CardSkeleton />
-          </>
+          <div className="col-span-full">
+            <ProjectsTableSkeleton />
+          </div>
         ) : null}
         {!loading && projects.length === 0 && (
           <div className="col-span-full text-center py-12">
@@ -461,8 +459,17 @@ export default function ProjectsPage() {
                         <div className="font-medium text-zinc-900">
                           {project.name}
                         </div>
-                        <div className="text-xs text-zinc-500 mt-0.5">
-                          {project.projectID || project._id}
+                        <div className="flex items-center gap-1 mt-0.5 group">
+                          <span className="text-xs text-zinc-400 font-mono">
+                            {(project.projectID || project._id).slice(0, 12)}…
+                          </span>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(project.projectID || project._id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-zinc-600"
+                            title="Copy project ID"
+                          >
+                            <HugeiconsIcon icon={Copy01Icon} size={12} strokeWidth={2} />
+                          </button>
                         </div>
                       </td>
                       <td className="p-4">
@@ -488,7 +495,7 @@ export default function ProjectsPage() {
                         </div>
                       </td>
                       <td className="p-4">
-                        <div className="flex flex-wrap gap-1.5 max-w-sm">
+                        <div className="flex flex-row flex-wrap gap-1.5">
                           {project.services && project.services.length > 0 ? (
                             project.services.map((service) => {
                               // Color coding based on service type
@@ -531,28 +538,7 @@ export default function ProjectsPage() {
                               );
                             })
                           ) : (
-                            <div className="text-xs space-y-1">
-                              <div className="text-zinc-500 font-medium">
-                                Default Services:
-                              </div>
-                              <div className="flex flex-wrap gap-1">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-blue-50 text-blue-600">
-                                  OTP
-                                </span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-purple-50 text-purple-600">
-                                  SMS
-                                </span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-pink-50 text-pink-600">
-                                  Campaign
-                                </span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-green-50 text-green-600">
-                                  KYC: Phone
-                                </span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-orange-50 text-orange-600">
-                                  Checkout
-                                </span>
-                              </div>
-                            </div>
+                            <span className="text-xs text-zinc-400">—</span>
                           )}
                         </div>
                       </td>
